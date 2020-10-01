@@ -37,6 +37,8 @@ USAGE
 * [`microkit utils:kafka:listen`](#microkit-utilskafkalisten)
 * [`microkit utils:kafka:produce`](#microkit-utilskafkaproduce)
 * [`microkit utils:rtp`](#microkit-utilsrtp)
+* [`microkit utils:s3`](#microkit-utilss3)
+* [`microkit utils:s3:download KEY`](#microkit-utilss3download-key)
 * [`microkit utils:transcribe`](#microkit-utilstranscribe)
 
 ## `microkit help [COMMAND]`
@@ -222,6 +224,36 @@ EXAMPLES
 ```
 
 _See code: [src/commands/utils/rtp/index.ts](https://github.com/oleoneto/microkit/blob/v0.1.1/src/commands/utils/rtp/index.ts)_
+
+## `microkit utils:s3`
+
+interact with S3 buckets
+
+```
+USAGE
+  $ microkit utils:s3
+```
+
+_See code: [src/commands/utils/s3/index.ts](https://github.com/oleoneto/microkit/blob/v0.1.1/src/commands/utils/s3/index.ts)_
+
+## `microkit utils:s3:download KEY`
+
+download file from S3 bucket
+
+```
+USAGE
+  $ microkit utils:s3:download KEY
+
+OPTIONS
+  -b, --bucket=bucket                      (required) name of S3 bucket
+  -l, --downloadLocation=downloadLocation  path where the downloads should be saved
+
+EXAMPLES
+  $ s3:download audio.mp3 --bucket my-photos
+  $ s3:download audio.mp3 --bucket my-photos -l ~/Downloads
+```
+
+_See code: [src/commands/utils/s3/download.ts](https://github.com/oleoneto/microkit/blob/v0.1.1/src/commands/utils/s3/download.ts)_
 
 ## `microkit utils:transcribe`
 
