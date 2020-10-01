@@ -1,7 +1,7 @@
 {
   "name": "@oleoneto/microkit",
   "description": "Microservices toolkit",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "author": "Leo Neto",
   "maintainers": [
     "Leo Neto <leo@ekletik.com>"
