@@ -60,8 +60,6 @@ export default class UtilsCallIndex extends Command {
     const {args, flags} = this.parse(UtilsCallIndex)
     const dialString = `${flags.mode}/${args.dialString}`
 
-    this.log(JSON.stringify({docker: flags.docker, u: flags.username}))
-
     const host = flags.externalMediaHost.split(':').shift()
     const port = Number(flags.externalMediaHost.split(':').pop())
 
