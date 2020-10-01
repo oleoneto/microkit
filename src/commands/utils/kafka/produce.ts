@@ -6,11 +6,12 @@ import * as kafka from 'kafka-node'
 export default class KafkaProduce extends Command {
   static description = 'produce kafka messages'
 
+  static usage = 'utils:kafka:produce --topic feed --object \'{"userId": 8897, "action": "like", "objectId": 42}\''
+
   static examples = [
-    '$ kafka:produce --topic user-registration',
-    '$ kafka:produce --topic user-registration',
-    '$ kafka:produce --topic user-registration --total 10',
-    '$ kafka:produce --topic user-registration --total 10 --object \'{"id": 8897, "typeId": 43, "username": "lneto"}\'',
+    '$ utils:kafka:produce --topic feed',
+    '$ utils:kafka:produce --topic feed --total 10',
+    '$ utils:kafka:produce --topic feed --object \'{"userId": 8897, "action": "like", "objectId": 42}\'',
   ]
 
   static flags = {

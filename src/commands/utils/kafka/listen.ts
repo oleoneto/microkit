@@ -7,27 +7,28 @@ require('dotenv').config()
 export default class KafkaListen extends Command {
   static description = 'listen for or consume Kafka events'
 
+  static usage = 'utils:kafka:listen --topics feed registrations'
+
   static examples = [
-    '$ kafka:listen --topics user-registration user-login',
-    '$ kafka:listen --topics user-registration --scope -dev',
-    '$ kafka:listen --topics user-registration --listen-once',
-    '$ kafka:listen --topics user-registration --actions upload-profile-picture',
-    '$ kafka:listen --topics shopping-cart --ignore add-to-wishlist',
+    '$ utils:kafka:listen --topics feed',
+    '$ utils:kafka:listen --topics feed registrations',
+    '$ utils:kafka:listen --topics feed --listen-once',
+    '$ utils:kafka:listen --topics feed --actions like comment --mode watch',
+    '$ utils:kafka:listen --topics feed --actions repost --mode --ignore',
   ]
 
   static flags = {
     actions: flags.string({
-      description: 'kafka actions to listen to',
+      description: 'kafka actions to watch',
       required: false,
       multiple: true,
-      exclusive: ['ignore-actions'],
-      default: [],
+      dependsOn: ['mode'],
     }),
-    ignore: flags.string({
-      description: 'kafka actions to ignore',
+    mode: flags.enum({
+      description: 'determine whether to care about or ignore the actions',
       required: false,
-      multiple: true,
-      default: [],
+      options: ['watch', 'ignore'],
+      dependsOn: ['actions'],
     }),
     groupId: flags.string({
       char: 'g',
@@ -41,12 +42,6 @@ export default class KafkaListen extends Command {
       env: 'KAFKA_HOST',
     }),
     'listen-once': flags.boolean({description: 'stop listening once a message is received', required: false}),
-    scope: flags.string({
-      char: 's',
-      description: 'kafka topic suffix [i.e -qa, -local]',
-      default: '',
-      required: true,
-    }),
     topics: flags.string({char: 't', description: 'kafka topic', required: true, multiple: true}),
     total: flags.integer({
       description: 'maximum number of messages to consume',
@@ -79,7 +74,7 @@ export default class KafkaListen extends Command {
 
     KafkaListen.consumerGroup = new kafka.ConsumerGroup({
       kafkaHost: flags.host,
-      groupId: `${flags.groupId}${flags.scope}`,
+      groupId: flags.groupId,
       protocol: ['roundrobin'],
       id: 'microkit',
       sslOptions: {},
@@ -95,12 +90,11 @@ export default class KafkaListen extends Command {
       const {value} = message
       const {action} = JSON.parse(value as string)
 
-      const shouldWatchAllMessages = (flags.actions.length + flags.ignore.length) === 0
+      const shouldWatchAllMessages = flags.actions?.length === 0
 
-      const shouldWatch = flags.actions.includes(action)
-      const shouldIgnore = flags.ignore.includes(action)
+      const shouldWatch = flags.mode === 'watch' ? flags.actions?.includes(action) : !flags.actions?.includes(action)
 
-      const shouldCare = shouldWatchAllMessages || (shouldWatch || !shouldIgnore)
+      const shouldCare = shouldWatchAllMessages || shouldWatch
 
       KafkaListen.receivedMessages += 1
       KafkaListen.ignoredMessages = shouldCare ? KafkaListen.ignoredMessages : KafkaListen.ignoredMessages + 1

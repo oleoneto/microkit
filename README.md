@@ -34,8 +34,8 @@ USAGE
 * [`microkit utils:db`](#microkit-utilsdb)
 * [`microkit utils:db:read`](#microkit-utilsdbread)
 * [`microkit utils:kafka`](#microkit-utilskafka)
-* [`microkit utils:kafka:listen`](#microkit-utilskafkalisten)
-* [`microkit utils:kafka:produce`](#microkit-utilskafkaproduce)
+* [`microkit utils:kafka:listen --topics feed registrations`](#microkit-utilskafkalisten---topics-feed-registrations)
+* [`microkit utils:kafka:produce --topic feed --object '{"userId": 8897, "action": "like", "objectId": 42}'`](#microkit-utilskafkaproduce---topic-feed---object-userid-8897-action-like-objectid-42)
 * [`microkit utils:rtp`](#microkit-utilsrtp)
 * [`microkit utils:s3`](#microkit-utilss3)
 * [`microkit utils:s3:download KEY`](#microkit-utilss3download-key)
@@ -151,41 +151,40 @@ USAGE
 
 _See code: [src/commands/utils/kafka/index.ts](https://github.com/oleoneto/microkit/blob/v0.1.2/src/commands/utils/kafka/index.ts)_
 
-## `microkit utils:kafka:listen`
+## `microkit utils:kafka:listen --topics feed registrations`
 
 listen for or consume Kafka events
 
 ```
 USAGE
-  $ microkit utils:kafka:listen
+  $ microkit utils:kafka:listen --topics feed registrations
 
 OPTIONS
   -g, --groupId=groupId  [default: microkit] kafka consumer group identifier
-  -s, --scope=scope      (required) kafka topic suffix [i.e -qa, -local]
   -t, --topics=topics    (required) kafka topic
-  --actions=actions      [default: ] kafka actions to listen to
+  --actions=actions      kafka actions to watch
   --host=host            address of kafka host [i.e. https://example.com:9094]
-  --ignore=ignore        [default: ] kafka actions to ignore
   --listen-once          stop listening once a message is received
+  --mode=(watch|ignore)  determine whether to care about or ignore the actions
   --total=total          maximum number of messages to consume
 
 EXAMPLES
-  $ kafka:listen --topics user-registration user-login
-  $ kafka:listen --topics user-registration --scope -dev
-  $ kafka:listen --topics user-registration --listen-once
-  $ kafka:listen --topics user-registration --actions upload-profile-picture
-  $ kafka:listen --topics shopping-cart --ignore add-to-wishlist
+  $ utils:kafka:listen --topics feed
+  $ utils:kafka:listen --topics feed registrations
+  $ utils:kafka:listen --topics feed --listen-once
+  $ utils:kafka:listen --topics feed --actions like comment --mode watch
+  $ utils:kafka:listen --topics feed --actions repost --mode --ignore
 ```
 
 _See code: [src/commands/utils/kafka/listen.ts](https://github.com/oleoneto/microkit/blob/v0.1.2/src/commands/utils/kafka/listen.ts)_
 
-## `microkit utils:kafka:produce`
+## `microkit utils:kafka:produce --topic feed --object '{"userId": 8897, "action": "like", "objectId": 42}'`
 
 produce kafka messages
 
 ```
 USAGE
-  $ microkit utils:kafka:produce
+  $ microkit utils:kafka:produce --topic feed --object '{"userId": 8897, "action": "like", "objectId": 42}'
 
 OPTIONS
   -a, --action=action  kafka topic action
@@ -195,10 +194,9 @@ OPTIONS
   --total=total        [default: 1] number of messages to send
 
 EXAMPLES
-  $ kafka:produce --topic user-registration
-  $ kafka:produce --topic user-registration
-  $ kafka:produce --topic user-registration --total 10
-  $ kafka:produce --topic user-registration --total 10 --object '{"id": 8897, "typeId": 43, "username": "lneto"}'
+  $ utils:kafka:produce --topic feed
+  $ utils:kafka:produce --topic feed --total 10
+  $ utils:kafka:produce --topic feed --object '{"userId": 8897, "action": "like", "objectId": 42}'
 ```
 
 _See code: [src/commands/utils/kafka/produce.ts](https://github.com/oleoneto/microkit/blob/v0.1.2/src/commands/utils/kafka/produce.ts)_
