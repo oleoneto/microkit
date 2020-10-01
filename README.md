@@ -19,7 +19,7 @@ $ npm install -g @oleoneto/microkit
 $ microkit COMMAND
 running command...
 $ microkit (-v|--version|version)
-@oleoneto/microkit/0.1.0 darwin-x64 node-v12.18.4
+@oleoneto/microkit/0.1.1 darwin-x64 node-v12.18.4
 $ microkit --help [COMMAND]
 USAGE
   $ microkit COMMAND
@@ -65,7 +65,7 @@ USAGE
   $ microkit utils
 ```
 
-_See code: [src/commands/utils/index.ts](https://github.com/oleoneto/microkit/blob/v0.1.0/src/commands/utils/index.ts)_
+_See code: [src/commands/utils/index.ts](https://github.com/oleoneto/microkit/blob/v0.1.1/src/commands/utils/index.ts)_
 
 ## `microkit utils:call DIALSTRING`
 
@@ -93,7 +93,7 @@ EXAMPLES
   $ call 6001 --transcribe -a http://127.0.0.1:8088 -u asterisk --docker
 ```
 
-_See code: [src/commands/utils/call/index.ts](https://github.com/oleoneto/microkit/blob/v0.1.0/src/commands/utils/call/index.ts)_
+_See code: [src/commands/utils/call/index.ts](https://github.com/oleoneto/microkit/blob/v0.1.1/src/commands/utils/call/index.ts)_
 
 ## `microkit utils:db`
 
@@ -104,7 +104,7 @@ USAGE
   $ microkit utils:db
 ```
 
-_See code: [src/commands/utils/db/index.ts](https://github.com/oleoneto/microkit/blob/v0.1.0/src/commands/utils/db/index.ts)_
+_See code: [src/commands/utils/db/index.ts](https://github.com/oleoneto/microkit/blob/v0.1.1/src/commands/utils/db/index.ts)_
 
 ## `microkit utils:db:read`
 
@@ -136,7 +136,7 @@ EXAMPLES
   $ db:read --table friends --limit 10 --offset 2
 ```
 
-_See code: [src/commands/utils/db/read.ts](https://github.com/oleoneto/microkit/blob/v0.1.0/src/commands/utils/db/read.ts)_
+_See code: [src/commands/utils/db/read.ts](https://github.com/oleoneto/microkit/blob/v0.1.1/src/commands/utils/db/read.ts)_
 
 ## `microkit utils:kafka`
 
@@ -147,7 +147,7 @@ USAGE
   $ microkit utils:kafka
 ```
 
-_See code: [src/commands/utils/kafka/index.ts](https://github.com/oleoneto/microkit/blob/v0.1.0/src/commands/utils/kafka/index.ts)_
+_See code: [src/commands/utils/kafka/index.ts](https://github.com/oleoneto/microkit/blob/v0.1.1/src/commands/utils/kafka/index.ts)_
 
 ## `microkit utils:kafka:listen`
 
@@ -175,7 +175,7 @@ EXAMPLES
   $ kafka:listen --topics shopping-cart --ignore add-to-wishlist
 ```
 
-_See code: [src/commands/utils/kafka/listen.ts](https://github.com/oleoneto/microkit/blob/v0.1.0/src/commands/utils/kafka/listen.ts)_
+_See code: [src/commands/utils/kafka/listen.ts](https://github.com/oleoneto/microkit/blob/v0.1.1/src/commands/utils/kafka/listen.ts)_
 
 ## `microkit utils:kafka:produce`
 
@@ -199,7 +199,7 @@ EXAMPLES
   $ kafka:produce --topic user-registration --total 10 --object '{"id": 8897, "typeId": 43, "username": "lneto"}'
 ```
 
-_See code: [src/commands/utils/kafka/produce.ts](https://github.com/oleoneto/microkit/blob/v0.1.0/src/commands/utils/kafka/produce.ts)_
+_See code: [src/commands/utils/kafka/produce.ts](https://github.com/oleoneto/microkit/blob/v0.1.1/src/commands/utils/kafka/produce.ts)_
 
 ## `microkit utils:rtp`
 
@@ -221,7 +221,7 @@ EXAMPLES
   $ rtp --port 5554
 ```
 
-_See code: [src/commands/utils/rtp/index.ts](https://github.com/oleoneto/microkit/blob/v0.1.0/src/commands/utils/rtp/index.ts)_
+_See code: [src/commands/utils/rtp/index.ts](https://github.com/oleoneto/microkit/blob/v0.1.1/src/commands/utils/rtp/index.ts)_
 
 ## `microkit utils:transcribe`
 
@@ -243,7 +243,7 @@ EXAMPLES
   $ transcribe --port 5554
 ```
 
-_See code: [src/commands/utils/transcribe/index.ts](https://github.com/oleoneto/microkit/blob/v0.1.0/src/commands/utils/transcribe/index.ts)_
+_See code: [src/commands/utils/transcribe/index.ts](https://github.com/oleoneto/microkit/blob/v0.1.1/src/commands/utils/transcribe/index.ts)_
 <!-- commandsstop -->
 * [`microkit help [COMMAND]`](#microkit-help-command)
 
