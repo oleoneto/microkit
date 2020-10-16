@@ -75,18 +75,25 @@ export default class UtilsCallIndex extends Command {
 
     // MARK: Setup transcriber for external media
     if (shouldTranscribe) {
+      // Ensure transcriber keys exist
+      if (!process.env.DEEPGRAM_API_KEY && !process.env.DEEPGRAM_API_SECRET) {
+        this.error('Missing transcriber credentials. Set both DEEPGRAM_API_KEY and DEEPGRAM_API_SECRET in your environment variables')
+      }
+
       const transcriber = new Deepgram()
 
-      // MARK: Setup RTP server with transcriber.stream as audio destination
-      const server = new RTPServer({host, port, shouldLog: true}, transcriber.stream)
+      transcriber.on('ready', () => {
+        // MARK: Setup RTP server with transcriber.stream as audio destination
+        const server = new RTPServer({host, port, shouldLog: true}, transcriber.stream)
 
-      // MARK: Dial as soon as the RTP server is up-and-running
-      server.on('ready', async () => ari.dial(dialString, options))
+        // MARK: Dial as soon as the RTP server is up-and-running
+        server.on('ready', async () => ari.dial(dialString, options))
 
-      // MARK: Gracefully terminate related processes
-      ari.on('close', () => {
-        transcriber.close()
-        if (server.isRunning) server.close()
+        // MARK: Gracefully terminate related processes
+        ari.on('close', () => {
+          transcriber.close()
+          if (server.isRunning) server.close()
+        })
       })
     } else {
       await ari.dial(dialString)

@@ -18,11 +18,14 @@ export default class Deepgram extends EventsEmitter {
 
   protected history: any[];
 
+  protected buffer: any[];
+
   constructor() {
     super()
 
     this.current = []
     this.history = []
+    this.buffer = []
 
     this.socket = new WebSocket(URL, ['Basic', CREDENTIALS])
 
@@ -44,9 +47,11 @@ export default class Deepgram extends EventsEmitter {
       this.log()
     })
 
+    this.stream.on('data', (data: any) => this.buffer.push(data))
+
     this.socket.onclose = () => {
       this.showConversation()
-      console.log('👂 Deepgram connection closed...')
+      console.log(`👂 Deepgram connection closed. Buffer size: ${this.buffer.length}`)
     }
 
     process.on('SIGINT', () => {

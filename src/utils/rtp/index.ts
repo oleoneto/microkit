@@ -46,7 +46,7 @@ export default class RTPServer extends EventsEmitter {
     this.server.on('message', (message: string | any[]) => {
       const data = message.slice(12)
       this.buffer.push(data)
-      this.emit('data', data)
+      this.server.emit('data', data)
     })
 
     this.server.bind(this.port, this.address)
