@@ -34,8 +34,8 @@ USAGE
 * [`microkit utils:db`](#microkit-utilsdb)
 * [`microkit utils:db:read`](#microkit-utilsdbread)
 * [`microkit utils:kafka`](#microkit-utilskafka)
-* [`microkit utils:kafka:listen --topics feed registrations`](#microkit-utilskafkalisten---topics-feed-registrations)
-* [`microkit utils:kafka:produce --topic feed --object '{"userId": 8897, "action": "like", "objectId": 42}'`](#microkit-utilskafkaproduce---topic-feed---object-userid-8897-action-like-objectid-42)
+* [`microkit utils:kafka:listen`](#microkit-utilskafkalisten)
+* [`microkit utils:kafka:produce`](#microkit-utilskafkaproduce)
 * [`microkit utils:rtp`](#microkit-utilsrtp)
 * [`microkit utils:s3`](#microkit-utilss3)
 * [`microkit utils:s3:download KEY`](#microkit-utilss3download-key)
@@ -60,7 +60,7 @@ _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v2.2.3
 
 ## `microkit utils`
 
-extra developer tools
+developer utilities
 
 ```
 USAGE
@@ -88,11 +88,11 @@ OPTIONS
   --docker                                   indicate whether asterisk server is running within a docker container
 
 EXAMPLES
-  $ call 6001
-  $ call 6001 --mode SIP
-  $ call 6001 --transcribe
-  $ call 6001 --transcribe -e localhost:5554
-  $ call 6001 --transcribe -a http://127.0.0.1:8088 -u asterisk --docker
+  $ microkit utils:call 6001
+  $ microkit utils:call 6001 --mode SIP
+  $ microkit utils:call 6001 --transcribe
+  $ microkit utils:call 6001 --transcribe -e localhost:5554
+  $ microkit utils:call 6001 --transcribe -a http://127.0.0.1:8088 -u asterisk --docker
 ```
 
 _See code: [src/commands/utils/call/index.ts](https://github.com/oleoneto/microkit/blob/v0.2.1/src/commands/utils/call/index.ts)_
@@ -132,10 +132,10 @@ OPTIONS
   --table=table                (required) database table
 
 EXAMPLES
-  $ db:read --table friends
-  $ db:read --table friends --database people
-  $ db:read --table friends --limit 2
-  $ db:read --table friends --limit 10 --offset 2
+  $ microkit db:read --table friends
+  $ microkit db:read --table friends --database people
+  $ microkit db:read --table friends --limit 2
+  $ microkit db:read --table friends --limit 10 --offset 2
 ```
 
 _See code: [src/commands/utils/db/read.ts](https://github.com/oleoneto/microkit/blob/v0.2.1/src/commands/utils/db/read.ts)_
@@ -151,13 +151,13 @@ USAGE
 
 _See code: [src/commands/utils/kafka/index.ts](https://github.com/oleoneto/microkit/blob/v0.2.1/src/commands/utils/kafka/index.ts)_
 
-## `microkit utils:kafka:listen --topics feed registrations`
+## `microkit utils:kafka:listen`
 
 listen for or consume Kafka events
 
 ```
 USAGE
-  $ microkit utils:kafka:listen --topics feed registrations
+  $ microkit utils:kafka:listen
 
 OPTIONS
   -g, --groupId=groupId  [default: microkit] kafka consumer group identifier
@@ -169,22 +169,22 @@ OPTIONS
   --total=total          maximum number of messages to consume
 
 EXAMPLES
-  $ utils:kafka:listen --topics feed
-  $ utils:kafka:listen --topics feed registrations
-  $ utils:kafka:listen --topics feed --listen-once
-  $ utils:kafka:listen --topics feed --actions like comment --mode watch
-  $ utils:kafka:listen --topics feed --actions repost --mode --ignore
+  $ microkit utils:kafka:listen --topics feed
+  $ microkit utils:kafka:listen --topics feed registrations
+  $ microkit utils:kafka:listen --topics feed --listen-once
+  $ microkit utils:kafka:listen --topics feed --actions like comment --mode watch
+  $ microkit utils:kafka:listen --topics feed --actions repost --mode --ignore
 ```
 
 _See code: [src/commands/utils/kafka/listen.ts](https://github.com/oleoneto/microkit/blob/v0.2.1/src/commands/utils/kafka/listen.ts)_
 
-## `microkit utils:kafka:produce --topic feed --object '{"userId": 8897, "action": "like", "objectId": 42}'`
+## `microkit utils:kafka:produce`
 
 produce kafka messages
 
 ```
 USAGE
-  $ microkit utils:kafka:produce --topic feed --object '{"userId": 8897, "action": "like", "objectId": 42}'
+  $ microkit utils:kafka:produce
 
 OPTIONS
   -a, --action=action  kafka topic action
@@ -194,9 +194,9 @@ OPTIONS
   --total=total        [default: 1] number of messages to send
 
 EXAMPLES
-  $ utils:kafka:produce --topic feed
-  $ utils:kafka:produce --topic feed --total 10
-  $ utils:kafka:produce --topic feed --object '{"userId": 8897, "action": "like", "objectId": 42}'
+  $ microkit utils:kafka:produce --topic feed
+  $ microkit utils:kafka:produce --topic feed --total 10
+  $ microkit utils:kafka:produce --topic feed --object '{"userId": 8897, "action": "like", "objectId": 42}'
 ```
 
 _See code: [src/commands/utils/kafka/produce.ts](https://github.com/oleoneto/microkit/blob/v0.2.1/src/commands/utils/kafka/produce.ts)_
@@ -215,10 +215,10 @@ OPTIONS
   --port=port  [default: 5554] RTP client port
 
 EXAMPLES
-  $ rtp
-  $ rtp --host localhost --port 5554
-  $ rtp --host localhost
-  $ rtp --port 5554
+  $ microkit utils:rtp
+  $ microkit utils:rtp --host localhost --port 5554
+  $ microkit utils:rtp --host localhost
+  $ microkit utils:rtp --port 5554
 ```
 
 _See code: [src/commands/utils/rtp/index.ts](https://github.com/oleoneto/microkit/blob/v0.2.1/src/commands/utils/rtp/index.ts)_
@@ -247,8 +247,8 @@ OPTIONS
   -l, --downloadLocation=downloadLocation  path where the downloads should be saved
 
 EXAMPLES
-  $ s3:download audio.mp3 --bucket my-photos
-  $ s3:download audio.mp3 --bucket my-photos -l ~/Downloads
+  $ microkit utils:s3:download audio.mp3 --bucket my-photos
+  $ microkit utils:s3:download audio.mp3 --bucket my-photos -l ~/Downloads
 ```
 
 _See code: [src/commands/utils/s3/download.ts](https://github.com/oleoneto/microkit/blob/v0.2.1/src/commands/utils/s3/download.ts)_
@@ -267,10 +267,10 @@ OPTIONS
   --host=host              [default: 127.0.0.1] RTP server host
 
 EXAMPLES
-  $ transcribe
-  $ transcribe --host localhost --port 5554
-  $ transcribe --host localhost
-  $ transcribe --port 5554
+  $ microkit utils:transcribe
+  $ microkit utils:transcribe --host localhost --port 5554
+  $ microkit utils:transcribe --host localhost
+  $ microkit utils:transcribe --port 5554
 ```
 
 _See code: [src/commands/utils/transcribe/index.ts](https://github.com/oleoneto/microkit/blob/v0.2.1/src/commands/utils/transcribe/index.ts)_

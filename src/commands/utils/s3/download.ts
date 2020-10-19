@@ -6,8 +6,8 @@ export default class UtilsS3Download extends Command {
   static description = 'download file from S3 bucket'
 
   static examples = [
-    '$ s3:download audio.mp3 --bucket my-photos',
-    '$ s3:download audio.mp3 --bucket my-photos -l ~/Downloads',
+    '$ microkit utils:s3:download audio.mp3 --bucket my-photos',
+    '$ microkit utils:s3:download audio.mp3 --bucket my-photos -l ~/Downloads',
   ]
 
   static flags = {

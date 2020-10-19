@@ -6,12 +6,10 @@ import * as kafka from 'kafka-node'
 export default class KafkaProduce extends Command {
   static description = 'produce kafka messages'
 
-  static usage = 'utils:kafka:produce --topic feed --object \'{"userId": 8897, "action": "like", "objectId": 42}\''
-
   static examples = [
-    '$ utils:kafka:produce --topic feed',
-    '$ utils:kafka:produce --topic feed --total 10',
-    '$ utils:kafka:produce --topic feed --object \'{"userId": 8897, "action": "like", "objectId": 42}\'',
+    '$ microkit utils:kafka:produce --topic feed',
+    '$ microkit utils:kafka:produce --topic feed --total 10',
+    '$ microkit utils:kafka:produce --topic feed --object \'{"userId": 8897, "action": "like", "objectId": 42}\'',
   ]
 
   static flags = {

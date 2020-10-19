@@ -9,10 +9,10 @@ export default class DatabaseRead extends Command {
   static description = 'read from a database table'
 
   static examples = [
-    '$ db:read --table friends',
-    '$ db:read --table friends --database people',
-    '$ db:read --table friends --limit 2',
-    '$ db:read --table friends --limit 10 --offset 2',
+    '$ microkit db:read --table friends',
+    '$ microkit db:read --table friends --database people',
+    '$ microkit db:read --table friends --limit 2',
+    '$ microkit db:read --table friends --limit 10 --offset 2',
   ]
 
   static flags = {

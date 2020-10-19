@@ -7,14 +7,12 @@ require('dotenv').config()
 export default class KafkaListen extends Command {
   static description = 'listen for or consume Kafka events'
 
-  static usage = 'utils:kafka:listen --topics feed registrations'
-
   static examples = [
-    '$ utils:kafka:listen --topics feed',
-    '$ utils:kafka:listen --topics feed registrations',
-    '$ utils:kafka:listen --topics feed --listen-once',
-    '$ utils:kafka:listen --topics feed --actions like comment --mode watch',
-    '$ utils:kafka:listen --topics feed --actions repost --mode --ignore',
+    '$ microkit utils:kafka:listen --topics feed',
+    '$ microkit utils:kafka:listen --topics feed registrations',
+    '$ microkit utils:kafka:listen --topics feed --listen-once',
+    '$ microkit utils:kafka:listen --topics feed --actions like comment --mode watch',
+    '$ microkit utils:kafka:listen --topics feed --actions repost --mode --ignore',
   ]
 
   static flags = {

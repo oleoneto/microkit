@@ -5,10 +5,10 @@ export default class RTPIndex extends Command {
   static description = 'starts an RTP server'
 
   static examples = [
-    '$ rtp',
-    '$ rtp --host localhost --port 5554',
-    '$ rtp --host localhost',
-    '$ rtp --port 5554',
+    '$ microkit utils:rtp',
+    '$ microkit utils:rtp --host localhost --port 5554',
+    '$ microkit utils:rtp --host localhost',
+    '$ microkit utils:rtp --port 5554',
   ]
 
   static flags = {

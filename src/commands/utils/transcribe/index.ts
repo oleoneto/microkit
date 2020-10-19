@@ -6,10 +6,10 @@ export default class TranscribeIndex extends Command {
   static description = 'transcribe an audio stream'
 
   static examples = [
-    '$ transcribe',
-    '$ transcribe --host localhost --port 5554',
-    '$ transcribe --host localhost',
-    '$ transcribe --port 5554',
+    '$ microkit utils:transcribe',
+    '$ microkit utils:transcribe --host localhost --port 5554',
+    '$ microkit utils:transcribe --host localhost',
+    '$ microkit utils:transcribe --port 5554',
   ]
 
   static flags = {

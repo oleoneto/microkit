@@ -9,11 +9,11 @@ export default class UtilsCallIndex extends Command {
   static description = 'place a call using an asterisk server'
 
   static examples = [
-    '$ call 6001',
-    '$ call 6001 --mode SIP',
-    '$ call 6001 --transcribe',
-    '$ call 6001 --transcribe -e localhost:5554',
-    '$ call 6001 --transcribe -a http://127.0.0.1:8088 -u asterisk --docker',
+    '$ microkit utils:call 6001',
+    '$ microkit utils:call 6001 --mode SIP',
+    '$ microkit utils:call 6001 --transcribe',
+    '$ microkit utils:call 6001 --transcribe -e localhost:5554',
+    '$ microkit utils:call 6001 --transcribe -a http://127.0.0.1:8088 -u asterisk --docker',
   ]
 
   static flags = {
