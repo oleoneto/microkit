@@ -16,3 +16,6 @@ env/
 *.mp4
 *.mov
 *.wav
+
+templates
+
