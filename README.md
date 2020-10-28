@@ -19,7 +19,7 @@ $ npm install -g @oleoneto/microkit
 $ microkit COMMAND
 running command...
 $ microkit (-v|--version|version)
-@oleoneto/microkit/0.2.2 darwin-x64 node-v12.18.4
+@oleoneto/microkit/0.2.2 darwin-x64 node-v12.19.0
 $ microkit --help [COMMAND]
 USAGE
   $ microkit COMMAND
@@ -78,20 +78,24 @@ USAGE
   $ microkit utils:call DIALSTRING
 
 OPTIONS
-  -a, --address=address                      [default: http://127.0.0.1:8088] asterisk server address
+  -a, --address=address                      (required) [default: http://127.0.0.1:8088] asterisk server address
   -e, --externalMediaHost=externalMediaHost  [default: localhost:5554] RTP listening server address (external host)
   -f, --format=format                        [default: ulaw] audio format
   -m, --mode=mode                            [default: SIP] mode
-  -p, --password=password                    [default: asterisk] asterisk password
+  -p, --password=password                    (required) [default: asterisk] asterisk password
   -t, --transcribe                           transcribe call in real-time
-  -u, --username=username                    [default: asterisk] asterisk user
-  --docker                                   indicate whether asterisk server is running within a docker container
+  -u, --username=username                    (required) [default: asterisk] asterisk user
+  --docker                                   set this if asterisk server is running inside a docker container
+  --engine=(deepgram|transcribe)             (required) [default: deepgram] transcription engine
+  --timeout=timeout                          [default: 180] set limit for transcriber connection in seconds
+  --watch                                    watch RTP packet information
 
 EXAMPLES
   $ microkit utils:call 6001
   $ microkit utils:call 6001 --mode SIP
   $ microkit utils:call 6001 --transcribe
   $ microkit utils:call 6001 --transcribe -e localhost:5554
+  $ microkit utils:call 6001 --transcribe --docker --engine=deepgram
   $ microkit utils:call 6001 --transcribe -a http://127.0.0.1:8088 -u asterisk --docker
 ```
 
@@ -210,15 +214,15 @@ USAGE
   $ microkit utils:rtp
 
 OPTIONS
-  --host=host  [default: 127.0.0.1] RTP server host
-  --log        log RTP server messages
-  --port=port  [default: 5554] RTP client port
+  --log           log RTP server messages
+  --port=port     [default: 5554] RTP client port
+  --show-info     show RTP packet info
+  --show-packets  show RTP packets
 
 EXAMPLES
   $ microkit utils:rtp
-  $ microkit utils:rtp --host localhost --port 5554
-  $ microkit utils:rtp --host localhost
   $ microkit utils:rtp --port 5554
+  $ microkit utils:rtp --show-packets=true
 ```
 
 _See code: [src/commands/utils/rtp/index.ts](https://github.com/oleoneto/microkit/blob/v0.2.2/src/commands/utils/rtp/index.ts)_

@@ -5,6 +5,7 @@ const EventsEmitter = require('events')
 
 const Events = {
   close: 'close',
+  done: 'done',
   ready: 'ready',
   ariDialing: 'dialing',
   ariStart: 'start',
@@ -52,7 +53,9 @@ export default class AriController extends EventsEmitter {
     this.on(Events.ariDialing, (endpoint: string) => console.log('☎️ Ari is dialing', endpoint))
     this.on(Events.bridgeCreated, (id: string) => console.log('☎️ Bridge created', id))
     this.on(Events.bridgeDestroyed, (id: string) => console.log('☎️ Bridge destroyed', id))
-    this.on(Events.channelAddedToBridge, (bridgeId: string, id: string) => console.log('☎️ Channel added to bridge', bridgeId, id))
+    this.on(Events.channelAddedToBridge, (bridgeId: string, id: string) => {
+      console.log('☎️ Channel added to bridge', bridgeId, id)
+    })
     this.on(Events.channelCreated, (id: string) => console.log('☎️ Channel created', id))
     this.on(Events.channelDestroyed, (id: string) => console.log('☎️ Channel destroyed', id))
 
@@ -111,13 +114,47 @@ export default class AriController extends EventsEmitter {
       this.externalMedia.on(Events.stasisEnd, async () => this.close())
 
       try {
-        await this.externalMedia.externalMedia({
+        const channel = await this.externalMedia.externalMedia({
           app: this.name,
           external_host: options?.externalMediaHost,
           format: options?.format || 'ulaw',
         })
 
+        /**
+         *
+         * External media channel looks like the following:
+         *
+         * {
+         *   channel: {
+         *     id: '5374cae5-f53e-4d9e-96f3-b4b2a32ca6dc',
+         *     name: 'UnicastRTP/host.docker.internal-0x561b84030aa0',
+         *     state: 'Down',
+         *     caller: { name: '', number: '' },
+         *     connected: { name: '', number: '' },
+         *     accountcode: '',
+         *     dialplan: {
+         *        context: 'default',
+         *        exten: 's',
+         *        priority: 1,
+         *        app_name: 'AppDial2',
+         *        app_data: '(Outgoing Line)'
+         *     },
+         *     creationtime: '2020-10-22T02:46:22.021+0000',
+         *     language: 'en',
+         *     channelvars: {
+         *       UNICASTRTP_LOCAL_PORT: '10008',
+         *       UNICASTRTP_LOCAL_ADDRESS: '172.19.0.2'
+         *     }
+         *   },
+         *   local_port: 10008,
+         *   local_address: '172.19.0.2'
+         * }
+        */
+
         console.log('☎️ External media started at', options?.externalMediaHost)
+        console.log('☎️ External media channel id', channel.channel.id)
+        console.log('☎️ External media channel name', channel.channel.name)
+        console.log('☎️ External media channel variables', channel.channel.channelvars)
       } catch (error) {
         await this.close()
       }
@@ -154,6 +191,6 @@ export default class AriController extends EventsEmitter {
     }
 
     await this.ari.stop()
-    this.emit(Events.close)
+    this.emit(Events.done)
   }
 }
