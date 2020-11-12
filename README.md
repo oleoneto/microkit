@@ -30,6 +30,7 @@ USAGE
 <!-- commands -->
 * [`microkit help [COMMAND]`](#microkit-help-command)
 * [`microkit utils`](#microkit-utils)
+* [`microkit utils:audio:info PATH`](#microkit-utilsaudioinfo-path)
 * [`microkit utils:call DIALSTRING`](#microkit-utilscall-dialstring)
 * [`microkit utils:db`](#microkit-utilsdb)
 * [`microkit utils:db:read`](#microkit-utilsdbread)
@@ -68,6 +69,27 @@ USAGE
 ```
 
 _See code: [src/commands/utils/index.ts](https://github.com/oleoneto/microkit/blob/v0.2.2/src/commands/utils/index.ts)_
+
+## `microkit utils:audio:info PATH`
+
+check the information of an audio file
+
+```
+USAGE
+  $ microkit utils:audio:info PATH
+
+OPTIONS
+  -x, --extended          show extra columns
+  --columns=columns       only show provided columns (comma-separated)
+  --csv                   output is csv format [alias: --output=csv]
+  --filter=filter         filter property by partial string matching, ex: name=foo
+  --no-header             hide table header from output
+  --no-truncate           do not truncate output to fit screen
+  --output=csv|json|yaml  output in a more machine friendly format
+  --sort=sort             property to sort by (prepend '-' for descending)
+```
+
+_See code: [src/commands/utils/audio/info.ts](https://github.com/oleoneto/microkit/blob/v0.2.2/src/commands/utils/audio/info.ts)_
 
 ## `microkit utils:call DIALSTRING`
 
