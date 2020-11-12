@@ -288,15 +288,16 @@ USAGE
   $ microkit utils:transcribe
 
 OPTIONS
-  -p, --port=port          [default: 5554] RTP client port
-  -v, --vendor=(deepgram)  [default: deepgram] transcription vendor
-  --host=host              [default: 127.0.0.1] RTP server host
+  -p, --port=port                 [default: 5554] RTP client port
+  --engine=(deepgram|transcribe)  (required) [default: deepgram] transcription engine
+  --host=host                     [default: 127.0.0.1] RTP server host
+  --timeout=timeout               [default: 180] set limit for transcriber connection in seconds
 
 EXAMPLES
   $ microkit utils:transcribe
-  $ microkit utils:transcribe --host localhost --port 5554
-  $ microkit utils:transcribe --host localhost
   $ microkit utils:transcribe --port 5554
+  $ microkit utils:transcribe --engine=deepgram
+  $ microkit utils:transcribe --engine=deepgram --port 5554
 ```
 
 _See code: [src/commands/utils/transcribe/index.ts](https://github.com/oleoneto/microkit/blob/v0.2.3/src/commands/utils/transcribe/index.ts)_
