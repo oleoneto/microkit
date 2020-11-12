@@ -290,7 +290,6 @@ USAGE
 OPTIONS
   -p, --port=port                 [default: 5554] RTP client port
   --engine=(deepgram|transcribe)  (required) [default: deepgram] transcription engine
-  --host=host                     [default: 127.0.0.1] RTP server host
   --timeout=timeout               [default: 180] set limit for transcriber connection in seconds
 
 EXAMPLES

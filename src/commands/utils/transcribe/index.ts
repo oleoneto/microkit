@@ -15,7 +15,6 @@ export default class TranscribeIndex extends Command {
   ]
 
   static flags = {
-    host: flags.string({description: 'RTP server host', default: '127.0.0.1'}),
     port: flags.integer({char: 'p', description: 'RTP client port', default: 5554}),
     timeout: flags.integer({description: 'set limit for transcriber connection in seconds', default: 180}),
     engine: flags.enum({
