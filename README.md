@@ -19,7 +19,7 @@ $ npm install -g @oleoneto/microkit
 $ microkit COMMAND
 running command...
 $ microkit (-v|--version|version)
-@oleoneto/microkit/0.2.5 darwin-x64 node-v12.19.0
+@oleoneto/microkit/0.2.5 darwin-x64 node-v12.19.1
 $ microkit --help [COMMAND]
 USAGE
   $ microkit COMMAND
@@ -37,6 +37,7 @@ USAGE
 * [`microkit utils:kafka`](#microkit-utilskafka)
 * [`microkit utils:kafka:listen`](#microkit-utilskafkalisten)
 * [`microkit utils:kafka:produce`](#microkit-utilskafkaproduce)
+* [`microkit utils:rtmp`](#microkit-utilsrtmp)
 * [`microkit utils:rtp`](#microkit-utilsrtp)
 * [`microkit utils:s3`](#microkit-utilss3)
 * [`microkit utils:s3:download KEY`](#microkit-utilss3download-key)
@@ -110,6 +111,7 @@ OPTIONS
   --docker                                   set this if asterisk server is running inside a docker container
   --engine=(deepgram|transcribe)             (required) [default: deepgram] transcription engine
   --timeout=timeout                          [default: 180] set limit for transcriber connection in seconds
+  --transcode                                transcode RTP stream [beta]
   --watch                                    watch RTP packet information
 
 EXAMPLES
@@ -226,6 +228,29 @@ EXAMPLES
 ```
 
 _See code: [src/commands/utils/kafka/produce.ts](https://github.com/oleoneto/microkit/blob/v0.2.5/src/commands/utils/kafka/produce.ts)_
+
+## `microkit utils:rtmp`
+
+starts an RTMP server (video streaming)
+
+```
+USAGE
+  $ microkit utils:rtmp
+
+OPTIONS
+  --auth-play                  allow playback of RTMP stream [beta]
+  --auth-publish               publish RTMP stream [beta]
+  --chunkSize=chunkSize        [default: 60000] RTMP server chunk size
+  --gop-cache                  RTMP server cache
+  --http-port=http-port        [default: 9700] HTTP port
+  --mount-point=mount-point    [default: live] RTMP server default mount point
+  --ping=ping                  [default: 30] RTMP server ping
+  --ping-timeout=ping-timeout  [default: 60] RTMP server ping-timeout in seconds
+  --port=port                  [default: 1935] RTMP server port
+  --transcode                  transcode RTMP stream [beta]
+```
+
+_See code: [src/commands/utils/rtmp/index.ts](https://github.com/oleoneto/microkit/blob/v0.2.5/src/commands/utils/rtmp/index.ts)_
 
 ## `microkit utils:rtp`
 
