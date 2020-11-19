@@ -51,6 +51,7 @@ export default class RTPServer extends EventsEmitter {
     })
     this.server.on('listening', () => {
       this.emit(EVENTS.READY)
+      this.emit(EVENTS.LISTENING)
       this.isRunning = true
       console.log(`⚡️ RTP server started at ${this.port}`)
       if (this.listener) this.pipe(this.listener)

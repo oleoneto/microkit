@@ -68,7 +68,7 @@ export default class UtilsCallIndex extends Command {
       required: true,
       default: 'deepgram',
     }),
-    // remote: flags.boolean({description: 'skip RTP initialization and establish remote connection'}),
+    transcode: flags.boolean({description: 'transcode RTP stream [beta]', default: false}),
   }
 
   static args = [{name: 'dialString', required: true, example: '6001'}]
@@ -124,10 +124,10 @@ export default class UtilsCallIndex extends Command {
 
       switch (flags.engine) {
       case 'transcribe':
-        transcriber = new Transcribe(flags.timeout)
+        transcriber = new Transcribe(flags.timeout, flags.transcode)
         break
       default:
-        transcriber = new Deepgram(flags.timeout)
+        transcriber = new Deepgram(flags.timeout, flags.transcode)
         break
       }
 

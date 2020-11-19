@@ -27,7 +27,7 @@ export default class UtilsAudioInfo extends Command {
         channels: '',
         codec_name: {header: 'Codec'},
         codec_type: {header: 'CodecType'},
-        duration: '', // {get: (row: any) => row},
+        duration: {header: 'DurationInSeconds'},
         sample_rate: {header: 'SampleRate'},
       }
 
