@@ -3,6 +3,7 @@ import AriController from '../../../utils/ari'
 import RTPServer from '../../../utils/rtp'
 import Deepgram from '../../../vendors/deepgram'
 import Transcribe from '../../../vendors/transcribe'
+// import AWS from '../../../vendors/beta'
 import {EVENTS} from '../../../vendors/interfaces/transcriber'
 
 require('dotenv').config()
@@ -67,8 +68,10 @@ export default class UtilsCallIndex extends Command {
       options: ['deepgram', 'transcribe'],
       required: true,
       default: 'deepgram',
+      dependsOn: ['transcribe'],
     }),
-    transcode: flags.boolean({description: 'transcode RTP stream [beta]', default: false}),
+    transcode: flags.boolean({description: 'transcode RTP stream [beta]', default: false, dependsOn: ['transcribe']}),
+    pipe: flags.boolean({description: 'pipe RTP stream to transcriber [beta]', default: false, dependsOn: ['transcribe']}),
   }
 
   static args = [{name: 'dialString', required: true, example: '6001'}]
@@ -77,6 +80,7 @@ export default class UtilsCallIndex extends Command {
     const credentials = [
       {engine: 'deepgram', credentials: Boolean(process.env.DEEPGRAM_API_KEY && process.env.DEEPGRAM_API_SECRET)},
       {engine: 'transcribe', credentials: Boolean(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_ACCESS_KEY_SECRET)},
+      // {engine: 'beta', credentials: Boolean(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_ACCESS_KEY_SECRET)},
     ]
 
     return Boolean(credentials.find(e => e.engine === engine)?.credentials)
@@ -124,10 +128,13 @@ export default class UtilsCallIndex extends Command {
 
       switch (flags.engine) {
       case 'transcribe':
-        transcriber = new Transcribe(flags.timeout, flags.transcode)
+        transcriber = new Transcribe(flags.timeout, 'aws-transcribe')
         break
+      // case 'beta':
+      //   transcriber = new AWS(flags.timeout, 'aws-transcribe-beta-client')
+      //   break
       default:
-        transcriber = new Deepgram(flags.timeout, flags.transcode)
+        transcriber = new Deepgram(flags.timeout, 'deepgram')
         break
       }
 
@@ -139,7 +146,11 @@ export default class UtilsCallIndex extends Command {
       })
 
       // MARK: Capture RTP data in transcriber
-      server.on(EVENTS.DATA, (data: any, rawData: any) => transcriber.capture(data, rawData))
+      if (flags.pipe) {
+        server.on(EVENTS.LISTENING, () => server.pipe(transcriber))
+      } else {
+        server.on(EVENTS.DATA, (data: any, rawData: any) => transcriber.capture(data, rawData))
+      }
 
       // MARK: Gracefully terminate all processes
       server.on(EVENTS.DONE, () => transcriber.close())

@@ -1,13 +1,13 @@
 /* eslint-disable no-console */
 import Transcriber, {EVENTS} from '../../vendors/interfaces/transcriber'
 import {groupBy} from '../array/group-by'
-import {Socket} from 'dgram'
 
 const dgram = require('dgram')
 const EventsEmitter = require('events')
+const {pipe} = require('stream').prototype
 
 export default class RTPServer extends EventsEmitter {
-  server: Socket;
+  server: any;
 
   protected port: number;
 
@@ -31,6 +31,7 @@ export default class RTPServer extends EventsEmitter {
   }, listener?: Transcriber) {
     super()
     this.server = dgram.createSocket('udp4')
+    this.server.pipe = pipe
 
     this.port = args.port
     this.shouldLog = args.shouldLog
@@ -49,7 +50,7 @@ export default class RTPServer extends EventsEmitter {
       this.isRunning = false
       console.log('\n⚡️ RTP server connection closed. Buffer size: ', this.buffer.length)
     })
-    this.server.on('listening', () => {
+    this.server.on(EVENTS.LISTENING, () => {
       this.emit(EVENTS.READY)
       this.emit(EVENTS.LISTENING)
       this.isRunning = true
@@ -58,7 +59,7 @@ export default class RTPServer extends EventsEmitter {
     })
 
     // eslint-disable-next-line no-unused-vars
-    this.server.on('message', (message: string | any[], remoteInfo: any) => {
+    this.server.on(EVENTS.MESSAGE, (message: string | any[], remoteInfo: any) => {
       const data = message.slice(12)
 
       /**
@@ -107,5 +108,9 @@ export default class RTPServer extends EventsEmitter {
      */
     const processed = groupBy('port', this.buffer)
     console.log(processed)
+  }
+
+  pipe(transcriber: Transcriber) {
+    this.server.pipe(transcriber.stream)
   }
 }

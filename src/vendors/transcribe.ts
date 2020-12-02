@@ -145,28 +145,16 @@ export default class AWSTranscribe extends EventsEmitter implements Transcriber 
     if (messageWrapper.headers[':message-type'].value === 'event') {
       const results = messageBody.Transcript.Results
 
-      if (results.length > 0) {
-        console.log(results[0])
-      }
+      if (results.length > 0) console.log(results[0])
 
       console.log(messageBody.Transcript)
     } else {
-      // onError(messageBody.Message)
       console.log('👂 AWS Transcribe encountered an error.', messageBody.Message)
     }
   }
 
   capture(data: any, rawData: any): void {
-    // console.log(rawData)
-    // const binary = this.convertAudioToBinaryMessage(data)
-    // this.socket.send(binary)
-    // this.stream.write(binary)
-
     const binary = this.convertAudioToBinaryMessage(data)
     this.socket.send(binary)
-
-    // DOES NOT WORK
-    // const binary = eventStreamMarshaller.marshall(this.getAudioEventMessage(data))
-    // this.socket.send(binary)
   }
 }
