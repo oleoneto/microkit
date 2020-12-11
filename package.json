@@ -14,7 +14,7 @@
   },
   "bugs": "https://github.com/oleoneto/microkit/issues",
   "dependencies": {
-    "@aws-sdk/client-transcribe-streaming": "^1.0.0-rc.2",
+    "@aws-sdk/client-transcribe-streaming": "^1.0.0-rc.8",
     "@aws-sdk/eventstream-marshaller": "^1.0.0-rc.2",
     "@aws-sdk/util-utf8-node": "^1.0.0-rc.2",
     "@oclif/command": "^1",
