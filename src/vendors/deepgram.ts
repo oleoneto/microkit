@@ -11,7 +11,7 @@ const EventsEmitter = require('events')
 
 const DeepgramOptions = {
   diarize: true,
-  encoding: 'mulaw',
+  encoding: 'mulaw', // options: linear16, flac, amr-nb (sr: 8000), amr-wb (sr: 16000), opus, speex
   model: 'phonecall', // options: general, meeting, phoneCall
   multichannel: true,
   sample_rate: 8000,
