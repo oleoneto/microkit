@@ -3,7 +3,6 @@ import AriController from '../../../utils/ari'
 import RTPServer from '../../../utils/rtp'
 import Deepgram from '../../../vendors/deepgram'
 import Transcribe from '../../../vendors/transcribe'
-// import AWS from '../../../vendors/beta'
 import {EVENTS} from '../../../vendors/interfaces/transcriber'
 
 require('dotenv').config()
@@ -21,7 +20,22 @@ export default class UtilsCallIndex extends Command {
   ]
 
   static flags = {
-    format: flags.string({char: 'f', description: 'audio format', default: 'ulaw'}),
+    format: flags.enum({
+      char: 'f',
+      description: 'audio format',
+      options: [
+        'ulaw',
+        'slin',   // <- has potential
+        'slin16',
+        'slin24', // <- has potential
+        'slin32',
+        'slin44',
+        'slin48',
+        'slin96',
+        'slin192',
+      ],
+      default: 'slin',
+    }),
     mode: flags.string({char: 'm', description: 'mode', default: 'SIP'}),
     address: flags.string({
       char: 'a',
@@ -54,7 +68,6 @@ export default class UtilsCallIndex extends Command {
     transcribe: flags.boolean({
       char: 't',
       description: 'transcribe call in real-time',
-      default: false,
       dependsOn: ['externalMediaHost'],
     }),
     timeout: flags.integer({description: 'set limit for transcriber connection in seconds', default: 180}),
@@ -65,13 +78,14 @@ export default class UtilsCallIndex extends Command {
     }),
     engine: flags.enum({
       description: 'transcription engine',
-      options: ['deepgram', 'transcribe'],
+      options: ['deepgram', 'transcribe', 'beta'],
       required: true,
       default: 'deepgram',
-      dependsOn: ['transcribe'],
     }),
-    transcode: flags.boolean({description: 'transcode RTP stream [beta]', default: false, dependsOn: ['transcribe']}),
-    pipe: flags.boolean({description: 'pipe RTP stream to transcriber [beta]', default: false, dependsOn: ['transcribe']}),
+    transcode: flags.boolean({description: 'transcode RTP stream [beta]', dependsOn: ['transcribe']}),
+    pipe: flags.boolean({description: 'pipe RTP stream to transcriber [beta]', dependsOn: ['transcribe']}),
+    'show-rtp-packets': flags.boolean({description: 'show RTP packets', default: false}),
+    'show-rtp-logs': flags.boolean({description: 'show RTP logs', default: true}),
   }
 
   static args = [{name: 'dialString', required: true, example: '6001'}]
@@ -80,7 +94,7 @@ export default class UtilsCallIndex extends Command {
     const credentials = [
       {engine: 'deepgram', credentials: Boolean(process.env.DEEPGRAM_API_KEY && process.env.DEEPGRAM_API_SECRET)},
       {engine: 'transcribe', credentials: Boolean(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_ACCESS_KEY_SECRET)},
-      // {engine: 'beta', credentials: Boolean(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_ACCESS_KEY_SECRET)},
+      {engine: 'beta', credentials: Boolean(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_ACCESS_KEY_SECRET)},
     ]
 
     return Boolean(credentials.find(e => e.engine === engine)?.credentials)
@@ -104,8 +118,8 @@ export default class UtilsCallIndex extends Command {
 
     const server = new RTPServer({
       port,
-      shouldLog: true,
-      showPackets: false,
+      shouldLog: flags['show-rtp-logs'],
+      showPackets: flags['show-rtp-packets'],
       showInfo: flags.watch,
     })
 
@@ -130,15 +144,16 @@ export default class UtilsCallIndex extends Command {
       case 'transcribe':
         transcriber = new Transcribe(flags.timeout, 'aws-transcribe')
         break
-      // case 'beta':
-      //   transcriber = new AWS(flags.timeout, 'aws-transcribe-beta-client')
-      //   break
       default:
         transcriber = new Deepgram(flags.timeout, 'deepgram')
         break
       }
 
-      transcriber.on(EVENTS.DONE, () => (server && server.isRunning) ? server.close() : 0)
+      transcriber.on(EVENTS.DONE, () => {
+        (server && server.isRunning) ? server.close() : 0
+        // eslint-disable-next-line unicorn/no-process-exit
+        process.exit(0)
+      })
 
       // MARK: Dial after transcriber has connected to websocket
       transcriber.on(EVENTS.READY, async () => {

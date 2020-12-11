@@ -48,6 +48,7 @@ export default class RTPServer extends EventsEmitter {
     this.server.on(EVENTS.CLOSE, () => {
       this.emit(EVENTS.DONE)
       this.isRunning = false
+      if (this.showPackets) this.processBuffer()
       console.log('\n⚡️ RTP server connection closed. Buffer size: ', this.buffer.length)
     })
     this.server.on(EVENTS.LISTENING, () => {
@@ -87,7 +88,6 @@ export default class RTPServer extends EventsEmitter {
     process.on('SIGINT', () => {
       this.emit(EVENTS.DONE)
       this.close()
-      this.processBuffer()
     })
   }
 
@@ -106,8 +106,9 @@ export default class RTPServer extends EventsEmitter {
      *    ...more ports
      * ]
      */
-    const processed = groupBy('port', this.buffer)
-    console.log(processed)
+    // const processed = groupBy('port', this.buffer)
+    const processed = this.buffer
+    console.dir(processed, {maxArrayLength: null})
   }
 
   pipe(transcriber: Transcriber) {

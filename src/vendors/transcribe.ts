@@ -5,6 +5,7 @@ import Transcriber, {EVENTS} from './interfaces/transcriber'
 import {Signature} from '../utils/aws/signature'
 import {downSampleBuffer} from '../utils/audio/down-sample-buffer'
 import {pcmEncode} from '../utils/audio/pcm-encode'
+import {formatTranscript} from '../utils/format-transcript'
 
 const {AWS_ACCESS_KEY_SECRET, AWS_ACCESS_KEY_ID} = process.env
 
@@ -26,14 +27,6 @@ const config = {
   accessKeySecret: String(AWS_ACCESS_KEY_SECRET),
 }
 
-const signature = new Signature()
-
-const URL = signature.createWebSocketURL({
-  region: config.region,
-  accessKeyId: config.accessKeyId,
-  secretAccessKey: config.accessKeySecret,
-})
-
 export default class AWSTranscribe extends EventsEmitter implements Transcriber {
   description: string;
 
@@ -45,10 +38,24 @@ export default class AWSTranscribe extends EventsEmitter implements Transcriber 
 
   protected socket: WebSocket;
 
+  protected inputSampleRate = 44100
+
+  protected outputSampleRate = 8000
+
   constructor(timeout: number, description = 'AWS Transcribe') {
     super()
 
     this.description = description
+
+    const signature = new Signature()
+
+    const URL = signature.createWebSocketURL({
+      region: config.region,
+      accessKeyId: config.accessKeyId,
+      secretAccessKey: config.accessKeySecret,
+      // languageCode: 'en-GB',
+      // sampleRate: this.outputSampleRate,
+    })
 
     this.socket = new WebSocket(URL)
 
@@ -60,6 +67,8 @@ export default class AWSTranscribe extends EventsEmitter implements Transcriber 
 
     this.socket.addEventListener(EVENTS.OPEN, () => {
       console.log('👂 Connected to AWS Transcribe')
+      // console.log(`👂 AWS Transcribe pcmEncoder will use input sample rate of: ${this.inputSampleRate}`)
+      // console.log(`👂 AWS Transcribe pcmEncoder will use output sample rate of: ${this.outputSampleRate}`)
       this.emit(EVENTS.READY)
 
       if (timeout) {
@@ -106,8 +115,11 @@ export default class AWSTranscribe extends EventsEmitter implements Transcriber 
     if (raw === null) return
 
     // downSample and convert the raw audio bytes to PCM
-    const downSampledBuffer = downSampleBuffer(raw, 8000, 8000)
+    const convertedArray = raw // Float32Array.from(raw)
+    const downSampledBuffer = downSampleBuffer(convertedArray)
     const pcmEncodedBuffer = pcmEncode(downSampledBuffer)
+    // const intArray = new Uint8Array()
+    // const floatArray = Float32Array.from(intArray)
 
     // add the right JSON headers and structure to the message
     const audioEventMessage = this.getAudioEventMessage(Buffer.from(pcmEncodedBuffer))
@@ -143,18 +155,21 @@ export default class AWSTranscribe extends EventsEmitter implements Transcriber 
     const messageBody = JSON.parse(fromCharCode.apply(String, messageWrapper.body))
 
     if (messageWrapper.headers[':message-type'].value === 'event') {
-      const results = messageBody.Transcript.Results
-
-      if (results.length > 0) console.log(results[0])
-
-      console.log(messageBody.Transcript)
+      if (messageBody.Transcript.Results?.length) {
+        const transcript = messageBody.Transcript.Results[0]?.Alternatives[0]?.Transcript || ''
+        this.history += `${formatTranscript(transcript)} `
+        console.log('=>', transcript)
+      }
     } else {
       console.log('👂 AWS Transcribe encountered an error.', messageBody.Message)
     }
   }
 
   capture(data: any, rawData: any): void {
+    // const b = eventStreamMarshaller.marshall(this.getAudioEventMessage(data))
     const binary = this.convertAudioToBinaryMessage(data)
+    console.dir(binary, {maxArrayLength: null})
+    // console.dir(binary)
     this.socket.send(binary)
   }
 }

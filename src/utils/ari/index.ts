@@ -50,7 +50,7 @@ export default class AriController extends EventsEmitter {
     this.ari = Client
 
     this.on(Events.ariStart, (name: string) => console.log('☎️ Ari application started', name))
-    this.on(Events.ariDialing, (endpoint: string) => console.log('☎️ Ari is dialing', endpoint))
+    this.on(Events.ariDialing, (endpoint: string, codec: string) => console.log(`☎️ Ari is dialing ${endpoint} with codec ${codec}`))
     this.on(Events.bridgeCreated, (id: string) => console.log('☎️ Bridge created', id))
     this.on(Events.bridgeDestroyed, (id: string) => console.log('☎️ Bridge destroyed', id))
     this.on(Events.channelAddedToBridge, (bridgeId: string, id: string) => {
@@ -92,12 +92,13 @@ export default class AriController extends EventsEmitter {
 
     // MARK: Dial workflow
     try {
+      const codec = options?.format || 'ulaw'
       await this.channel.originate({
         endpoint: dialString,
-        formats: options?.format || 'ulaw',
+        formats: codec,
         app: this.name,
       })
-      this.emit(Events.ariDialing, dialString)
+      this.emit(Events.ariDialing, dialString, codec)
     } catch (error) {
       await this.close()
     }
@@ -117,7 +118,7 @@ export default class AriController extends EventsEmitter {
         const channel = await this.externalMedia.externalMedia({
           app: this.name,
           external_host: options?.externalMediaHost,
-          format: options?.format || 'ulaw',
+          format: options?.format,
         })
 
         /**
@@ -151,6 +152,7 @@ export default class AriController extends EventsEmitter {
          * }
         */
 
+        console.log('☎️ External media using coded', options?.format)
         console.log('☎️ External media started at', options?.externalMediaHost)
         console.log('☎️ External media channel id', channel.channel.id)
         console.log('☎️ External media channel name', channel.channel.name)

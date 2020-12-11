@@ -16,17 +16,17 @@ export default class KafkaListen extends Command {
   ]
 
   static flags = {
-    actions: flags.string({
-      description: 'kafka actions to watch',
+    keys: flags.string({
+      description: 'kafka keys to watch for',
       required: false,
       multiple: true,
       dependsOn: ['mode'],
     }),
     mode: flags.enum({
-      description: 'determine whether to care about or ignore the actions',
+      description: 'determine whether to care about or ignore these keys',
       required: false,
       options: ['watch', 'ignore'],
-      dependsOn: ['actions'],
+      dependsOn: ['keys'],
     }),
     groupId: flags.string({
       char: 'g',
@@ -66,6 +66,12 @@ export default class KafkaListen extends Command {
       this.error('Missing value for host. Either pass it as --host or set KAFKA_HOST as an environment variable')
     }
 
+    const keys = flags.keys.map(value => {
+      if (value.split(':').length <= 1) value = [value, null]
+      else value = [value.split(':')[0], value.split(':')[1]]
+      return value
+    })
+
     // MARK: Setup ConsumerGroup
 
     const consumerTopics = flags.topics
@@ -86,11 +92,24 @@ export default class KafkaListen extends Command {
 
     KafkaListen.consumerGroup.on('message', message => {
       const {value} = message
-      const {action} = JSON.parse(value as string)
+      const parsedMessage = JSON.parse(value as string)
+      // const keysToWatch = Object.keys(JSON.parse(value as string)) // ['key1', 'key2']
+      // const valuesToWatch = Object.values(JSON.parse(value as string))
 
-      const shouldWatchAllMessages = flags.actions?.length === 0
+      const hasRelevantKeyValuePairs = keys.filter((arr: any[]) => {
+        // this.log(parsedMessage[arr[0]])
+        // console.log(parsedMessage.hasOwnProperty(arr[0]), parsedMessage[arr[0]] === arr[1])
+        // this.log(arr[0], arr[1])
+        // console.log(parsedMessage[arr[0]], arr[1])
+        // eslint-disable-next-line no-prototype-builtins
+        return parsedMessage.hasOwnProperty(arr[0]) && parsedMessage[arr[0]] === arr[1]
+      })
 
-      const shouldWatch = flags.mode === 'watch' ? flags.actions?.includes(action) : !flags.actions?.includes(action)
+      this.log({hasRelevantKeyValuePairs, keys})
+
+      const shouldWatchAllMessages = flags.keys?.length === 0
+
+      const shouldWatch = flags.mode === 'watch' ? hasRelevantKeyValuePairs.length > 0 : !hasRelevantKeyValuePairs
 
       const shouldCare = shouldWatchAllMessages || shouldWatch
 
