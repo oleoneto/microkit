@@ -1,3 +1,5 @@
+import {PassThrough} from 'stream'
+
 export const EVENTS = {
   CLOSE: 'close',
   CLOSED: 'closed',
@@ -12,9 +14,9 @@ export const EVENTS = {
 
 export default interface Transcriber {
   description: string;
-  stream: any;
+  duplex: PassThrough;
 
-  capture(data: any, rawData: any): void;
+  capture(data: ArrayBuffer): void;
   process(data: any): void;
   isActive(): boolean;
   close(): void;
