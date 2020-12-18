@@ -5,28 +5,36 @@ import {EVENTS} from './interfaces/transcriber'
 import Transcriber from './interfaces/transcriber'
 import {queryFromObject} from '../utils/query-from-object'
 import {formatTranscript} from '../utils/format-transcript'
+import {PassThrough} from 'stream'
 
 const WebSocket = require('ws')
 const EventsEmitter = require('events')
 
-const DeepgramOptions = {
-  diarize: true,
-  encoding: 'mulaw', // options: linear16, flac, amr-nb (sr: 8000), amr-wb (sr: 16000), opus, speex
-  model: 'phonecall', // options: general, meeting, phoneCall
-  multichannel: true,
-  sample_rate: 8000,
-  interim_results: false,
-  language: 'en-US',
+const getTrueFormat = (format: string) => {
+  switch (format) {
+  case 'slin':
+    return 'linear16'
+  case 'slin16':
+    return 'linear16'
+  case 'slin24':
+    return 'linear16'
+  case 'slin44':
+    return 'linear16'
+  case 'slin92':
+    return 'linear16'
+  case 'ulaw':
+    return 'mulaw'
+  default:
+    return format
+  }
 }
-
-const {DEEPGRAM_API_KEY, DEEPGRAM_API_SECRET} = process.env
-const URL = `wss://cab2b5852c84ae12.deepgram.com/v2/listen/stream?${queryFromObject(DeepgramOptions)}`
-const CREDENTIALS = Buffer.from(`${DEEPGRAM_API_KEY}:${DEEPGRAM_API_SECRET}`).toString('base64')
 
 export default class Deepgram extends EventsEmitter implements Transcriber {
   public stream: any
 
-  protected socket: WebSocket
+  public duplex: PassThrough;
+
+  protected socket: WebSocket;
 
   protected history = '';
 
@@ -36,16 +44,35 @@ export default class Deepgram extends EventsEmitter implements Transcriber {
 
   private transcript = ''
 
-  constructor(timeout: number, description = 'Deepgram') {
+  constructor(timeout: number, format: string, description = 'Deepgram') {
     super()
 
     this.description = description
 
+    const DeepgramOptions = {
+      diarize: true,
+      // encoding: getTrueFormat(format), // options: linear16, flac, amr-nb (sr: 8000), amr-wb (sr: 16000), opus, speex
+      model: 'phonecall', // options: general, meeting, phoneCall
+      multichannel: true,
+      sample_rate: 8000,
+      interim_results: false,
+      language: 'en-US',
+    }
+
+    const {DEEPGRAM_API_KEY, DEEPGRAM_API_SECRET} = process.env
+    const URL = `wss://cab2b5852c84ae12.deepgram.com/v2/listen/stream?${queryFromObject(DeepgramOptions)}`
+    const CREDENTIALS = Buffer.from(`${DEEPGRAM_API_KEY}:${DEEPGRAM_API_SECRET}`).toString('base64')
+
     this.socket = new WebSocket(URL, ['Basic', CREDENTIALS])
 
-    this.stream = WebSocket.createWebSocketStream(this.socket)
+    // This should capure any data piped in...
+    this.duplex = new PassThrough()
 
-    this.stream.on(EVENTS.DATA, (data: any) => this.buffer.push(data))
+    this.duplex._write = (chunk, enc, next) => {
+      this.buffer.push(chunk)
+      this.socket.send(chunk)
+      next()
+    }
 
     this.socket.addEventListener(EVENTS.ERROR, (error: any) => {
       console.error(error)
@@ -54,6 +81,9 @@ export default class Deepgram extends EventsEmitter implements Transcriber {
 
     this.socket.addEventListener(EVENTS.OPEN, () => {
       console.log('👂 Connected to deepgram')
+      console.log(`👂 Deepgram is using binaryType  => ${this.socket.binaryType}`)
+      console.log(`👂 Deepgram is using codec       => ${format}`)
+
       this.emit(EVENTS.READY)
 
       if (timeout) {
@@ -77,11 +107,6 @@ export default class Deepgram extends EventsEmitter implements Transcriber {
       else this.showConversation()
       this.emit(EVENTS.DONE)
     })
-  }
-
-  capture(data: any, rawData: any): void {
-    this.socket.send(data)
-    this.buffer.push({data, rawData})
   }
 
   process(data: any): void {

@@ -11,7 +11,7 @@ import {
   MessageHeaderValue,
 } from '@aws-sdk/eventstream-marshaller'
 
-import {PassThrough, Writable} from 'stream'
+import {PassThrough} from 'stream'
 
 const {AWS_ACCESS_KEY_SECRET, AWS_ACCESS_KEY_ID} = process.env
 
@@ -47,9 +47,9 @@ const config = {
 }
 
 export default class AWSTranscribe extends EventsEmitter implements Transcriber {
-  description: string;
+  public description: string;
 
-  duplex: PassThrough;
+  public duplex: PassThrough;
 
   protected history = '';
 
@@ -162,13 +162,14 @@ export default class AWSTranscribe extends EventsEmitter implements Transcriber 
   }
 
   close(): void {
+    this.emit(EVENTS.DONE)
     this.socket.close()
   }
 
   process(data: any) {
     const {fromCharCode} = String
     const messageWrapper = eventBuilder.unmarshall(Buffer.from(data.data))
-    const messageBody = JSON.parse(fromCharCode.apply(String, messageWrapper.body))
+    const messageBody = JSON.parse(fromCharCode.apply(String, messageWrapper.body as any))
 
     if (messageWrapper.headers[':message-type'].value === 'event') {
       if (messageBody.Transcript.Results?.length) {

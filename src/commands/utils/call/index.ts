@@ -5,6 +5,8 @@ import Deepgram from '../../../vendors/deepgram'
 import Transcribe from '../../../vendors/transcribe'
 import {EVENTS} from '../../../vendors/interfaces/transcriber'
 
+const ffmpeg = require('fluent-ffmpeg')
+
 require('dotenv').config()
 
 export default class UtilsCallIndex extends Command {
@@ -24,15 +26,20 @@ export default class UtilsCallIndex extends Command {
       char: 'f',
       description: 'audio format',
       options: [
-        'ulaw',
-        'slin',   // <- has potential
+        'amr-nb', // <== only supported by deepgram
+        'amr-wb', // <== only supported by deepgram
+        'flac',   // <== only supported by deepgram
+        'opus',   // <== only supported by deepgram
+        'slin',
         'slin16',
-        'slin24', // <- has potential
+        'slin24',
         'slin32',
         'slin44',
         'slin48',
         'slin96',
         'slin192',
+        'speex', // <== only supported by deepgram
+        'ulaw',  // <== only supported by deepgram
       ],
       default: 'slin',
     }),
@@ -74,7 +81,6 @@ export default class UtilsCallIndex extends Command {
     watch: flags.boolean({
       description: 'watch RTP packet information',
       default: false,
-      exclusive: ['transcribe'],
     }),
     engine: flags.enum({
       description: 'transcription engine',
@@ -82,10 +88,8 @@ export default class UtilsCallIndex extends Command {
       required: true,
       default: 'deepgram',
     }),
-    transcode: flags.boolean({description: 'transcode RTP stream [beta]', dependsOn: ['transcribe']}),
-    pipe: flags.boolean({description: 'pipe RTP stream to transcriber [beta]', dependsOn: ['transcribe']}),
+    transcode: flags.boolean({description: 'transcode RTP stream with ffmpeg (always true when engine=transcribe)', dependsOn: ['transcribe'], default: false}),
     'show-rtp-packets': flags.boolean({description: 'show RTP packets', default: false}),
-    'show-rtp-logs': flags.boolean({description: 'show RTP logs', default: true}),
   }
 
   static args = [{name: 'dialString', required: true, example: '6001'}]
@@ -109,6 +113,7 @@ export default class UtilsCallIndex extends Command {
 
     const externalMediaHost = flags.docker ? `host.docker.internal:${port}` : flags.externalMediaHost
     const options = {format: flags.format, externalMediaHost}
+    // const transcode = flags.engine === 'transcribe' ? true : flags.transcode
 
     const ari = new AriController({
       address: flags.address,
@@ -118,7 +123,7 @@ export default class UtilsCallIndex extends Command {
 
     const server = new RTPServer({
       port,
-      shouldLog: flags['show-rtp-logs'],
+      shouldLog: flags.watch,
       showPackets: flags['show-rtp-packets'],
       showInfo: flags.watch,
     })
@@ -142,10 +147,10 @@ export default class UtilsCallIndex extends Command {
 
       switch (flags.engine) {
       case 'transcribe':
-        transcriber = new Transcribe(flags.timeout, 'aws-transcribe')
+        transcriber = new Transcribe(flags.timeout, 'slin44', 'aws-transcribe')
         break
       default:
-        transcriber = new Deepgram(flags.timeout, 'deepgram')
+        transcriber = new Deepgram(flags.timeout, 'slin44', 'deepgram')
         break
       }
 
@@ -157,15 +162,29 @@ export default class UtilsCallIndex extends Command {
 
       // MARK: Dial after transcriber has connected to websocket
       transcriber.on(EVENTS.READY, async () => {
+        this.log('=> Using ffmpeg for transcoding [beta]')
+
+        const ffstream = ffmpeg(`rtp://localhost:${port}`)
+        .inputOptions(['-protocol_whitelist', 'pipe,udp,rtp'])
+        .outputOptions(['-ac 1', '-preset', 'veryfast', '-ar 44100'])
+        .toFormat('wav')
+        .on(EVENTS.START, (cmd: any) => this.log('=> Command:', cmd))
+        .on(EVENTS.ERROR, (error: { message: any }) => this.log('=> An error occurred:', error.message))
+        .on(EVENTS.END, () => this.log('=> Processing finished!'))
+        .on(EVENTS.DATA, (chunk: string | any[]) => {
+          this.log(`=> ffmpeg wrote ${chunk.length} bytes`)
+        })
+
+        ffstream.pipe(transcriber.duplex)
+
+        // server.on(EVENTS.LISTENING, () => {
+        //   // server.listener = transcriber.duplex
+        //   server.pipe(transcriber.duplex)
+        //   this.log('=> Piping stream directly to PassThrough()')
+        // })
+
         await ari.dial(dialString, options)
       })
-
-      // MARK: Capture RTP data in transcriber
-      if (flags.pipe) {
-        server.on(EVENTS.LISTENING, () => server.pipe(transcriber))
-      } else {
-        server.on(EVENTS.DATA, (data: any, rawData: any) => transcriber.capture(data, rawData))
-      }
 
       // MARK: Gracefully terminate all processes
       server.on(EVENTS.DONE, () => transcriber.close())
