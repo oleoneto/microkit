@@ -1,27 +1,27 @@
 /* eslint-disable no-console */
 import Transcriber, {EVENTS} from '../../vendors/interfaces/transcriber'
-import {groupBy} from '../array/group-by'
+import {PassThrough} from 'stream'
 
 const dgram = require('dgram')
 const EventsEmitter = require('events')
 const {pipe} = require('stream').prototype
 
 export default class RTPServer extends EventsEmitter {
-  server: any;
+  socket: any;
 
-  protected port: number;
+  protected port: number
 
-  protected shouldLog: boolean;
+  protected shouldLog: boolean
 
-  protected showPackets: boolean;
+  protected showPackets: boolean
 
-  protected showInfo: boolean;
+  protected showInfo: boolean
 
-  protected listener: any;
+  public listener: any
 
-  protected buffer: any[];
+  protected buffer: any[]
 
-  public isRunning = false
+  protected streams: Map<any, any>
 
   constructor(args: {
     port: number;
@@ -30,37 +30,49 @@ export default class RTPServer extends EventsEmitter {
     showInfo?: boolean;
   }, listener?: Transcriber) {
     super()
-    this.server = dgram.createSocket('udp4')
-    this.server.pipe = pipe
 
     this.port = args.port
     this.shouldLog = args.shouldLog
     this.showPackets = Boolean(args.showPackets)
     this.showInfo = Boolean(args.showInfo)
     this.buffer = []
+    this.streams = new Map()
 
     this.listener = listener
 
-    this.server.on(EVENTS.ERROR, (err: any) => {
-      console.error(err)
-      this.server.close()
-    })
-    this.server.on(EVENTS.CLOSE, () => {
+    this.bind()
+
+    process.on('SIGINT', () => {
       this.emit(EVENTS.DONE)
-      this.isRunning = false
-      if (this.showPackets) this.processBuffer()
-      console.log('\n⚡️ RTP server connection closed. Buffer size: ', this.buffer.length)
+      this.close()
     })
-    this.server.on(EVENTS.LISTENING, () => {
+  }
+
+  bind() {
+    this.socket = dgram.createSocket('udp4')
+    this.socket.pipe = pipe
+
+    this.socket.on(EVENTS.ERROR, (err: any) => {
+      console.error(err)
+      this.socket.close()
+    })
+
+    this.socket.on(EVENTS.CLOSE, () => {
+      this.emit(EVENTS.DONE)
+      console.log('\n⚡️ RTP server connection closed. Buffer size: ', this.buffer.length)
+      console.log(`\n⚡️ RTP server had ${this.streams.size} connections`)
+    })
+
+    this.socket.on(EVENTS.LISTENING, () => {
       this.emit(EVENTS.READY)
       this.emit(EVENTS.LISTENING)
-      this.isRunning = true
-      console.log(`⚡️ RTP server started at ${this.port}`)
+      const address = this.socket.address()
+
+      console.log(`⚡️ RTP server started at ${address.address}:${address.port}`)
       if (this.listener) this.pipe(this.listener)
     })
 
-    // eslint-disable-next-line no-unused-vars
-    this.server.on(EVENTS.MESSAGE, (message: string | any[], remoteInfo: any) => {
+    this.socket.on(EVENTS.MESSAGE, (message: string | any[], remoteInfo: any) => {
       const data = message.slice(12)
 
       /**
@@ -75,24 +87,31 @@ export default class RTPServer extends EventsEmitter {
        */
 
       const port = remoteInfo.port
+
+      let stream: PassThrough = this.streams.get(port)
+
+      if (!stream) stream = this.createStream(port)
+
       this.buffer.push({port, data})
-      this.server.emit(EVENTS.DATA, data)
-      this.emit(EVENTS.DATA, data, message)
+      stream.write(data)
 
-      if (this.showInfo) console.log(remoteInfo)
-      if (this.showPackets) console.log(data)
+      if (this.showInfo) console.dir(remoteInfo)
+      if (this.showPackets) console.dir(data, {maxArrayLength: null})
     })
 
-    this.server.bind(this.port)
+    this.socket.bind({port: this.port, exclusive: true})
+  }
 
-    process.on('SIGINT', () => {
-      this.emit(EVENTS.DONE)
-      this.close()
-    })
+  createStream(port: number): PassThrough {
+    const stream = new PassThrough()
+    this.streams.set(port, stream)
+
+    console.log(`⚡️ RTP new streamer connected @ ${port}`)
+    return stream
   }
 
   close() {
-    this.server.close()
+    this.socket.close()
   }
 
   processBuffer() {
@@ -111,7 +130,12 @@ export default class RTPServer extends EventsEmitter {
     console.dir(processed, {maxArrayLength: null})
   }
 
-  pipe(transcriber: Transcriber) {
-    this.server.pipe(transcriber.stream)
+  getBuffer() {
+    return this.buffer
+  }
+
+  pipe(receiver: PassThrough) {
+    console.log('⚡️ RTP server started piping stream')
+    this.socket.pipe(receiver)
   }
 }
