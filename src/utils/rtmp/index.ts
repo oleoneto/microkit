@@ -32,22 +32,3 @@ export interface NodeMediaServerConfig {
     ];
   };
 }
-
-const NodeMediaServer = require('node-media-server')
-
-const EventsEmitter = require('events')
-
-export default class RTMPServer extends EventsEmitter {
-  protected server: any
-
-  constructor(config: NodeMediaServerConfig) {
-    super()
-    this.server = new NodeMediaServer(config)
-    this.server.run()
-
-    process.on('SIGINT', () => {
-      this.server.stop()
-      process.exit(0)
-    })
-  }
-}

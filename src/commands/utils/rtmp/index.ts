@@ -1,40 +1,98 @@
 import {Command, flags} from '@oclif/command'
-import RTMPServer, {NodeMediaServerConfig} from '../../../utils/rtmp'
+import {NodeMediaServerConfig} from '../../../utils/rtmp'
+
+const NodeMediaServer = require('node-media-server')
+
+const fs = require('fs')
+
+const ffmpeg = require('fluent-ffmpeg')
 
 export default class UtilsRtmpIndex extends Command {
   static description = 'starts an RTMP server (video streaming)'
 
+  static examples = [
+    '$ microkit utils:rtmp',
+    '$ microkit utils:rtmp --port=1935 --http-port=8090',
+    '$ microkit utils:rtmp --record --recording-format=mkv',
+  ]
+
   static flags = {
-    'mount-point': flags.string({description: 'RTMP server default mount point', default: 'live'}),
-    chunkSize: flags.integer({description: 'RTMP server chunk size', default: 60000}),
+    // 'auth-play': flags.boolean({description: 'allow playback of RTMP stream [beta]', default: true}),
+    // 'auth-publish': flags.boolean({description: 'publish RTMP stream [beta]', default: true}),
+    'chunk-size': flags.integer({description: 'RTMP server chunk size', default: 60000}),
     'gop-cache': flags.boolean({description: 'RTMP server cache', default: true}),
     'http-port': flags.integer({description: 'HTTP port', default: 9700}),
     ping: flags.integer({description: 'RTMP server ping', default: 30}),
     'ping-timeout': flags.integer({description: 'RTMP server ping-timeout in seconds', default: 60}),
     port: flags.integer({description: 'RTMP server port', default: 1935}),
-    transcode: flags.boolean({description: 'transcode RTMP stream [beta]', default: false}),
-    'auth-play': flags.boolean({description: 'allow playback of RTMP stream [beta]', default: true}),
-    'auth-publish': flags.boolean({description: 'publish RTMP stream [beta]', default: true}),
+    record: flags.boolean({description: 'capture/record RTMP stream into', default: false}),
+    'recording-format': flags.enum({description: 'recording format', options: ['mkv'], default: 'mkv'}),
+    'source-encoding': flags.enum({description: 'RTMP video source encoding', options: ['flv'], default: 'flv'}),
   }
 
   async run() {
     const {flags} = this.parse(UtilsRtmpIndex)
 
+    const shouldRecord = flags.record
+    const httpPort = flags['http-port']
+    const recordingsDirectory = './recordings'
+    const recordingFileFormat = flags['recording-format']
+    const sourceEncoding = flags['source-encoding']
+
+    // MARK: - Configure and start the RTMP server
     const config: NodeMediaServerConfig = {
       logType: 2,
       rtmp: {
         port: flags.port,
-        chunk_size: flags.chunkSize,
+        chunk_size: flags['chunk-size'],
         gop_cache: flags['gop-cache'],
         ping: flags.ping,
         ping_timeout: flags['ping-timeout'],
       },
       http: {
-        port: flags['http-port'],
+        port: httpPort,
         allow_origin: '*',
+        mediaroot: recordingsDirectory,
       },
     }
 
-    return new RTMPServer(config)
+    const server = new NodeMediaServer(config)
+
+    server.run()
+
+    // MARK: - Handle interrupts
+    process.on('SIGINT', () => {
+      server.stop()
+      process.exit(0)
+    })
+
+    // MARK: - Set up recording
+    if (shouldRecord) {
+      server.on('postPublish', (identifier: any, streamPath: string, _: any) => {
+        const filepath = `${recordingsDirectory}/${identifier}.${recordingFileFormat}`
+
+        // Ensure recording directory exists
+        if (!fs.existsSync(recordingsDirectory)) fs.mkdirSync(recordingsDirectory)
+
+        // NOTE: Since FFMPEG can grap streams over HTTP, we can grab it by using the stream URI.
+        // By default, streams are available at http[s]://localhost:[$port]/live/[$streampath].flv
+        const source = `http://localhost:${httpPort}${streamPath}.${sourceEncoding}`
+
+        const recordingCommand = ffmpeg(source)
+        .inputOptions(['-re'])
+        .outputOptions(['-c copy'])
+        .on('start', (cmd: string) => this.log('COMMAND: => ', cmd))
+        .on('error', (error: any) => this.error(error))
+        .output(filepath)
+
+        recordingCommand.run()
+
+        // NOTE: FFMPEG could also be used to pipe the stream to another endpoint, perhaps a socket connection.
+        // recordingCommand.pipe(someWritable)
+
+        this.log('Recording source  =>', source)
+        this.log('Recording path    =>', filepath)
+      })
+    }
   }
 }
