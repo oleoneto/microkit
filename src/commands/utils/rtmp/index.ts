@@ -1,11 +1,14 @@
 import {Command, flags} from '@oclif/command'
 import {NodeMediaServerConfig} from '../../../utils/rtmp'
+import {post} from '../../../utils/request'
 
 const NodeMediaServer = require('node-media-server')
 
 const fs = require('fs')
 
 const ffmpeg = require('fluent-ffmpeg')
+
+const URL = require('url')
 
 export default class UtilsRtmpIndex extends Command {
   static description = 'starts an RTMP server (video streaming)'
@@ -64,6 +67,52 @@ export default class UtilsRtmpIndex extends Command {
     process.on('SIGINT', () => {
       server.stop()
       process.exit(0)
+    })
+
+    // MARK: - Authentication and preconnect check for publishers
+    // NOTE: http://[host]/COMBO_INTERACTION + QUEUE_ID/CLIENT_ID/SECRET_KEY
+    // NOTE: http://[host]/COMBO_INTERACTION + QUEUE_ID/u1N51PCR1T/9h2Q=r;6UJ}xGs)
+    server.on('preConnect', (id: string, args: {app: string; type: string; tcUrl: string}) => {
+
+      const session = server.getSession(id)
+
+      // NOTE: Dummy authentication logic
+      try {
+        const url = URL.parse(args.tcUrl)
+        this.log(url.pathname)
+
+        let urlComponents = url.pathname.split('/')
+
+        urlComponents = urlComponents.filter((e: string) => e !== '')
+
+        if (urlComponents.length !== 3) this.error('Not a valid URL')
+
+        const comboKeyIds = urlComponents[0]
+        const clientId = urlComponents[1]
+        const secretKey = urlComponents[2]
+
+        this.log(`You are ${comboKeyIds}. Using CLIENT_ID: ${clientId} SECRET_KEY: ${secretKey}`)
+
+        post('http://localhost:3018/v1/auth', '', undefined, {comboKeyIds, clientId, secretKey})
+        .then((data: any) => {
+          if (!data.accept) session.reject()
+        })
+        .catch((error: string | Error) => {
+          session.reject()
+          this.error(error)
+        })
+      } catch (error) {
+        session.reject()
+      }
+    })
+
+    // MARK: - Authentication and preconnect check for subscriber/clients/players
+    server.on('prePlay', (id: string, streamPath: string, args: {ip: string; method: string; streamPath: string; query: any}) => {
+      // Pre play authorization
+      // let session = nms.getSession(id);
+      // session.reject();
+      // this.log('NO VIEWING FOR YOU. JK')
+      this.log(args.query)
     })
 
     // MARK: - Set up recording
