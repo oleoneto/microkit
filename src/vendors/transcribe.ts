@@ -18,21 +18,6 @@ const {AWS_ACCESS_KEY_SECRET, AWS_ACCESS_KEY_ID} = process.env
 const EventsEmitter = require('events')
 const WebSocket = require('ws')
 
-const getSampleRate = (format: string) => {
-  // Provide matching sample rate in the request:
-  // so slin16 = (mediaSampleRateHertz = 16000),
-  // slin24 = (mediaSampleRateHertz = 24000),
-  // slin44 = (mediaSampleRateHertz = 44100)
-  switch (format) {
-  case 'slin44':
-    return 44100
-  case 'slin24':
-    return 24000
-  default:
-    return 16000
-  }
-}
-
 const eventBuilder = new EventStreamMarshaller(toUtf8, fromUtf8)
 
 const config = {
@@ -57,14 +42,14 @@ export default class AWSTranscribe extends EventsEmitter implements Transcriber 
 
   protected socket: WebSocket;
 
-  constructor(timeout: number, format: string, description = 'AWS Transcribe') {
+  constructor(timeout: number, description = 'AWS Transcribe') {
     super()
 
     this.description = description
 
     const signature = new Signature()
 
-    const sampleRate = getSampleRate(format)
+    const sampleRate = 16000 // getSampleRate(format)
 
     const signedURL = signature.createWebSocketURL({
       region: config.region,
@@ -81,9 +66,11 @@ export default class AWSTranscribe extends EventsEmitter implements Transcriber 
 
     this.duplex = new PassThrough()
     this.duplex._write = (chunk, enc, next) => {
+      chunk.swap16()
+
+      this.capture(chunk)
       this.buffer.push(chunk)
       // console.log(`=> Received ${this.buffer.length} chunks.`)
-      this.capture(chunk)
       next()
     }
 
@@ -94,7 +81,7 @@ export default class AWSTranscribe extends EventsEmitter implements Transcriber 
     this.socket.addEventListener(EVENTS.OPEN, () => {
       console.log('👂 Connected to AWS Transcribe')
       console.log(`👂 AWS Transcribe is using binaryType  => ${this.socket.binaryType}`)
-      console.log(`👂 AWS Transcribe is using codec       => ${format}`)
+      // console.log(`👂 AWS Transcribe is using codec       => ${format}`)
       console.log(`👂 AWS Transcribe is using sample rate => ${sampleRate}`)
       console.log(`👂 AWS Transcribe is using this url    => ${signedURL}`)
       this.emit(EVENTS.READY)
@@ -109,7 +96,7 @@ export default class AWSTranscribe extends EventsEmitter implements Transcriber 
 
     this.socket.onclose = () => {
       this.showConversation()
-      console.log('👂 AWS transcribe connection closed.')
+      console.log('👂 AWS transcribe connection closed. Buffer size', this.buffer.length)
       this.emit(EVENTS.DONE)
     }
 

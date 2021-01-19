@@ -1,6 +1,8 @@
 /* eslint-disable no-console */
 import Transcriber, {EVENTS} from '../../vendors/interfaces/transcriber'
 import {PassThrough} from 'stream'
+import AWSTranscribe from '../../vendors/transcribe'
+import Deepgram from '../../vendors/deepgram'
 
 const dgram = require('dgram')
 const EventsEmitter = require('events')
@@ -28,6 +30,8 @@ export default class RTPServer extends EventsEmitter {
     shouldLog: boolean;
     showPackets?: boolean;
     showInfo?: boolean;
+    supportsTranscriptions?: boolean;
+    transcriberEngine?: string;
   }, listener?: Transcriber) {
     super()
 
@@ -37,6 +41,8 @@ export default class RTPServer extends EventsEmitter {
     this.showInfo = Boolean(args.showInfo)
     this.buffer = []
     this.streams = new Map()
+    this.supportsTranscriptions = args.supportsTranscriptions || false
+    this.transcriberEngine = args.transcriberEngine || 'aws'
 
     this.listener = listener
 
@@ -88,12 +94,15 @@ export default class RTPServer extends EventsEmitter {
 
       const port = remoteInfo.port
 
-      let stream: PassThrough = this.streams.get(port)
+      if (this.supportsTranscriptions) {
+        let stream: PassThrough = this.streams.get(port)
 
-      if (!stream) stream = this.createStream(port)
+        if (!stream) stream = this.createStream(port)
 
-      this.buffer.push({port, data})
-      stream.write(data)
+        this.buffer.push({port, data})
+
+        stream.write(data)
+      }
 
       if (this.showInfo) console.dir(remoteInfo)
       if (this.showPackets) console.dir(data, {maxArrayLength: null})
@@ -105,6 +114,22 @@ export default class RTPServer extends EventsEmitter {
   createStream(port: number): PassThrough {
     const stream = new PassThrough()
     this.streams.set(port, stream)
+
+    let transcriber: Transcriber
+
+    switch (this.transcriberEngine) {
+    case 'deepgram':
+      transcriber = new Deepgram(160, 'deepgram')
+      break
+    default:
+      transcriber = new AWSTranscribe(160, 'aws-transcribe')
+      break
+    }
+
+    // linter: .on will exist if Transcriber extends Events
+    transcriber.on(EVENTS.READY, () => {
+      stream.pipe(transcriber.duplex)
+    })
 
     console.log(`⚡️ RTP new streamer connected @ ${port}`)
     return stream

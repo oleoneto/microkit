@@ -49,15 +49,15 @@ export default class AriController extends EventsEmitter {
     this.enableExternalMedia = options?.enableExternalMedia || false
     this.ari = Client
 
-    this.on(Events.ariStart, (name: string) => console.log('☎️ Ari application started', name))
-    this.on(Events.ariDialing, (endpoint: string, codec: string) => console.log(`☎️ Ari is dialing ${endpoint} with codec ${codec}`))
-    this.on(Events.bridgeCreated, (id: string) => console.log('☎️ Bridge created', id))
-    this.on(Events.bridgeDestroyed, (id: string) => console.log('☎️ Bridge destroyed', id))
+    this.on(Events.ariStart, (name: string) => console.log('☎️ => Ari application started', name))
+    this.on(Events.ariDialing, (endpoint: string, codec: string) => console.log(`☎️ => Ari is dialing ${endpoint}`))
+    this.on(Events.bridgeCreated, (id: string) => console.log('☎️ => Bridge created', id))
+    this.on(Events.bridgeDestroyed, (id: string) => console.log('☎️ => Bridge destroyed', id))
     this.on(Events.channelAddedToBridge, (bridgeId: string, id: string) => {
-      console.log('☎️ Channel added to bridge', bridgeId, id)
+      console.log('☎️ => Channel added to bridge', bridgeId, id)
     })
-    this.on(Events.channelCreated, (id: string) => console.log('☎️ Channel created', id))
-    this.on(Events.channelDestroyed, (id: string) => console.log('☎️ Channel destroyed', id))
+    this.on(Events.channelCreated, (id: string) => console.log('☎️ => Channel created', id))
+    this.on(Events.channelDestroyed, (id: string) => console.log('☎️ => Channel destroyed', id))
 
     process.on('SIGINT', async () => {
       await this.close()
@@ -92,13 +92,11 @@ export default class AriController extends EventsEmitter {
 
     // MARK: Dial workflow
     try {
-      const codec = options?.format || 'ulaw'
       await this.channel.originate({
         endpoint: dialString,
-        formats: codec,
         app: this.name,
       })
-      this.emit(Events.ariDialing, dialString, codec)
+      this.emit(Events.ariDialing, dialString)
     } catch (error) {
       await this.close()
     }
@@ -118,7 +116,7 @@ export default class AriController extends EventsEmitter {
         const channel = await this.externalMedia.externalMedia({
           app: this.name,
           external_host: options?.externalMediaHost,
-          format: options?.format,
+          format: options?.format || 'ulaw',
         })
 
         /**
@@ -152,11 +150,10 @@ export default class AriController extends EventsEmitter {
          * }
         */
 
-        console.log('☎️ External media using coded', options?.format)
-        console.log('☎️ External media started at', options?.externalMediaHost)
-        console.log('☎️ External media channel id', channel.channel.id)
-        console.log('☎️ External media channel name', channel.channel.name)
-        console.log('☎️ External media channel variables', channel.channel.channelvars)
+        console.log('☎️ => External media using codec', options?.format)
+        console.log('☎️ => External media started at', options?.externalMediaHost)
+        console.log('☎️ => External media channel id', channel.channel.id)
+        console.log('☎️ => External media channel name', channel.channel.name)
       } catch (error) {
         await this.close()
       }
@@ -170,7 +167,7 @@ export default class AriController extends EventsEmitter {
 
     if (this.channel) {
       try {
-        console.log('☎️ Hanging up channel', this.channel.id)
+        console.log('☎️ => Hanging up channel', this.channel.id)
         await this.channel.hangup()
       } catch (error) {}
       delete this.channel
@@ -178,7 +175,7 @@ export default class AriController extends EventsEmitter {
 
     if (this.externalMedia) {
       try {
-        console.log('☎️ Hanging up external media', this.externalMedia.id)
+        console.log('☎️ => Hanging up external media', this.externalMedia.id)
         await this.externalMedia.hangup()
       } catch (error) {}
       delete this.externalMedia
@@ -186,7 +183,7 @@ export default class AriController extends EventsEmitter {
 
     if (this.bridge) {
       try {
-        console.log('☎️ Destroying bridge', this.bridge.id)
+        console.log('☎️ => Destroying bridge', this.bridge.id)
         await this.bridge.destroy()
       } catch (error) {}
       delete this.bridge

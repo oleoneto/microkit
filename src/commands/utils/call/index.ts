@@ -5,7 +5,7 @@ import {EVENTS} from '../../../vendors/interfaces/transcriber'
 require('dotenv').config()
 
 export default class UtilsCallIndex extends Command {
-  static description = 'place a call using an asterisk server [1]'
+  static description = 'place a call using an asterisk server'
 
   static examples = [
     '$ microkit utils:call 6001',

@@ -12,6 +12,7 @@ export const EVENTS = {
   LISTENING: 'listening',
   MESSAGE: 'message',
   START: 'start',
+  SETUP_TRANSCRIBER: 'setupTranscriber',
 }
 
 export default interface Transcriber {
