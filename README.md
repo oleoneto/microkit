@@ -19,7 +19,7 @@ $ npm install -g @oleoneto/microkit
 $ microkit COMMAND
 running command...
 $ microkit (-v|--version|version)
-@oleoneto/microkit/0.2.5 darwin-x64 node-v12.19.1
+@oleoneto/microkit/0.2.5 darwin-x64 node-v12.20.0
 $ microkit --help [COMMAND]
 USAGE
   $ microkit COMMAND
@@ -41,7 +41,6 @@ USAGE
 * [`microkit utils:rtp`](#microkit-utilsrtp)
 * [`microkit utils:s3`](#microkit-utilss3)
 * [`microkit utils:s3:download KEY`](#microkit-utilss3download-key)
-* [`microkit utils:transcribe`](#microkit-utilstranscribe)
 
 ## `microkit help [COMMAND]`
 
@@ -101,26 +100,23 @@ USAGE
   $ microkit utils:call DIALSTRING
 
 OPTIONS
-  -a, --address=address                      (required) [default: http://127.0.0.1:8088] asterisk server address
-  -e, --externalMediaHost=externalMediaHost  [default: localhost:5554] RTP listening server address (external host)
-  -f, --format=format                        [default: ulaw] audio format
-  -m, --mode=mode                            [default: SIP] mode
-  -p, --password=password                    (required) [default: asterisk] asterisk password
-  -t, --transcribe                           transcribe call in real-time
-  -u, --username=username                    (required) [default: asterisk] asterisk user
-  --docker                                   set this if asterisk server is running inside a docker container
-  --engine=(deepgram|transcribe)             (required) [default: deepgram] transcription engine
-  --timeout=timeout                          [default: 180] set limit for transcriber connection in seconds
-  --transcode                                transcode RTP stream [beta]
-  --watch                                    watch RTP packet information
+  -a, --address=address                          (required) [default: http://127.0.0.1:8088] asterisk server address
+  -e, --external-media-host=external-media-host  RTP listening server address (external host)
+  -f, --format=format                            [default: ulaw] audio format
+  -m, --mode=mode                                [default: SIP] mode
+  -p, --password=password                        (required) [default: asterisk] asterisk password
+  -u, --username=username                        (required) [default: asterisk] asterisk user
+  --docker                                       set this if asterisk server is running inside a docker container
+  --enable-external-media                        enable external media [asterisk 16+]
 
 EXAMPLES
   $ microkit utils:call 6001
   $ microkit utils:call 6001 --mode SIP
-  $ microkit utils:call 6001 --transcribe
-  $ microkit utils:call 6001 --transcribe -e localhost:5554
-  $ microkit utils:call 6001 --transcribe --docker --engine=deepgram
-  $ microkit utils:call 6001 --transcribe -a http://127.0.0.1:8088 -u asterisk --docker
+  $ microkit utils:call 6001 -e localhost:5554
+  $ microkit utils:call 6001 --docker --engine=deepgram
+  $ microkit utils:call 6001 -a http://127.0.0.1:8088 -u asterisk --docker
+  $ microkit utils:call 6001 -e http://127.0.0.1:1234 --docker
+  $ microkit utils:call 6001 -e http://127.0.0.1:1234 --docker --format=ulaw
 ```
 
 _See code: [src/commands/utils/call/index.ts](https://github.com/oleoneto/microkit/blob/v0.2.5/src/commands/utils/call/index.ts)_
@@ -190,10 +186,10 @@ USAGE
 OPTIONS
   -g, --groupId=groupId  [default: microkit] kafka consumer group identifier
   -t, --topics=topics    (required) kafka topic
-  --actions=actions      kafka actions to watch
   --host=host            address of kafka host [i.e. https://example.com:9094]
+  --keys=keys            kafka keys to watch for
   --listen-once          stop listening once a message is received
-  --mode=(watch|ignore)  determine whether to care about or ignore the actions
+  --mode=(watch|ignore)  determine whether to care about or ignore these keys
   --total=total          maximum number of messages to consume
 
 EXAMPLES
@@ -238,16 +234,20 @@ USAGE
   $ microkit utils:rtmp
 
 OPTIONS
-  --auth-play                  allow playback of RTMP stream [beta]
-  --auth-publish               publish RTMP stream [beta]
-  --chunkSize=chunkSize        [default: 60000] RTMP server chunk size
+  --chunk-size=chunk-size      [default: 60000] RTMP server chunk size
   --gop-cache                  RTMP server cache
   --http-port=http-port        [default: 9700] HTTP port
-  --mount-point=mount-point    [default: live] RTMP server default mount point
   --ping=ping                  [default: 30] RTMP server ping
   --ping-timeout=ping-timeout  [default: 60] RTMP server ping-timeout in seconds
   --port=port                  [default: 1935] RTMP server port
-  --transcode                  transcode RTMP stream [beta]
+  --record                     capture/record RTMP stream into
+  --recording-format=(mkv)     [default: mkv] recording format
+  --source-encoding=(flv)      [default: flv] RTMP video source encoding
+
+EXAMPLES
+  $ microkit utils:rtmp
+  $ microkit utils:rtmp --port=1935 --http-port=8090
+  $ microkit utils:rtmp --record --recording-format=mkv
 ```
 
 _See code: [src/commands/utils/rtmp/index.ts](https://github.com/oleoneto/microkit/blob/v0.2.5/src/commands/utils/rtmp/index.ts)_
@@ -261,10 +261,12 @@ USAGE
   $ microkit utils:rtp
 
 OPTIONS
-  --log           log RTP server messages
-  --port=port     [default: 5554] RTP client port
-  --show-info     show RTP packet info
-  --show-packets  show RTP packets
+  -e, --engine=(aws|deepgram)  transcriber engine
+  -p, --port=port              [default: 5554] RTP client port
+  -t, --transcribe             enables audio transcription of RTP traffic
+  --log                        log RTP server messages
+  --show-info                  show RTP packet info
+  --show-packets               show RTP packets
 
 EXAMPLES
   $ microkit utils:rtp
@@ -303,28 +305,6 @@ EXAMPLES
 ```
 
 _See code: [src/commands/utils/s3/download.ts](https://github.com/oleoneto/microkit/blob/v0.2.5/src/commands/utils/s3/download.ts)_
-
-## `microkit utils:transcribe`
-
-transcribe an audio stream
-
-```
-USAGE
-  $ microkit utils:transcribe
-
-OPTIONS
-  -p, --port=port                 [default: 5554] RTP client port
-  --engine=(deepgram|transcribe)  (required) [default: deepgram] transcription engine
-  --timeout=timeout               [default: 180] set limit for transcriber connection in seconds
-
-EXAMPLES
-  $ microkit utils:transcribe
-  $ microkit utils:transcribe --port 5554
-  $ microkit utils:transcribe --engine=deepgram
-  $ microkit utils:transcribe --engine=deepgram --port 5554
-```
-
-_See code: [src/commands/utils/transcribe/index.ts](https://github.com/oleoneto/microkit/blob/v0.2.5/src/commands/utils/transcribe/index.ts)_
 <!-- commandsstop -->
 * [`microkit help [COMMAND]`](#microkit-help-command)
 
