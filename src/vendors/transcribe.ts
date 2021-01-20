@@ -42,10 +42,14 @@ export default class AWSTranscribe extends EventsEmitter implements Transcriber 
 
   protected socket: WebSocket;
 
-  constructor(timeout: number, description = 'AWS Transcribe') {
+  protected showInterimResults: boolean;
+
+  constructor(timeout: number, description = 'AWS Transcribe', showInterimResults = false) {
     super()
 
     this.description = description
+
+    this.showInterimResults = showInterimResults
 
     const signature = new Signature()
 
@@ -66,6 +70,7 @@ export default class AWSTranscribe extends EventsEmitter implements Transcriber 
 
     this.duplex = new PassThrough()
     this.duplex._write = (chunk, enc, next) => {
+      // This could go in .capture()
       chunk.swap16()
 
       this.capture(chunk)
@@ -160,9 +165,18 @@ export default class AWSTranscribe extends EventsEmitter implements Transcriber 
 
     if (messageWrapper.headers[':message-type'].value === 'event') {
       if (messageBody.Transcript.Results?.length) {
-        const transcript = messageBody.Transcript.Results[0]?.Alternatives[0]?.Transcript || ''
-        this.history += `${formatTranscript(transcript)} `
-        console.log('=>', transcript)
+        const result = messageBody.Transcript.Results[0]
+        const transcript = result.Alternatives[0]?.Transcript || ''
+
+        if (result && !result.IsPartial) {
+          this.history += `${formatTranscript(transcript)} `
+        }
+
+        if (this.showInterimResults) {
+          console.log('=>', transcript)
+        } else if (!result.IsPartial) {
+          console.log('=>', transcript)
+        }
       }
     } else {
       console.log('👂 AWS Transcribe encountered an error.', messageBody.Message)
