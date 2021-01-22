@@ -28,7 +28,22 @@ const put = (baseURL: string | undefined, path: string, headers: object | undefi
   })
 }
 
+export const post = (baseURL: string | undefined, path: string, headers: object | undefined, data: any) => {
+  const axios = Axios.create({
+    baseURL,
+    headers,
+  })
+
+  return new Promise((resolve, reject) => {
+    axios
+    .post(path, data)
+    .then((data: { data: unknown }) => resolve(data.data))
+    .catch((error: any) => reject(error))
+  })
+}
+
 module.exports = {
   get,
+  post,
   put,
 }

@@ -3,17 +3,22 @@ require('dotenv').config()
 
 import Transcriber, {EVENTS} from './interfaces/transcriber'
 import {Signature} from '../utils/aws/signature'
-import {downSampleBuffer} from '../utils/audio/down-sample-buffer'
-import {pcmEncode} from '../utils/audio/pcm-encode'
+import {formatTranscript} from '../utils/format-transcript'
+import {fromUtf8, toUtf8} from '@aws-sdk/util-utf8-node'
+import {
+  EventStreamMarshaller,
+  Message,
+  MessageHeaderValue,
+} from '@aws-sdk/eventstream-marshaller'
+
+import {PassThrough} from 'stream'
 
 const {AWS_ACCESS_KEY_SECRET, AWS_ACCESS_KEY_ID} = process.env
 
 const EventsEmitter = require('events')
 const WebSocket = require('ws')
-const marshaller = require('@aws-sdk/eventstream-marshaller')
-const util_utf8_node = require('@aws-sdk/util-utf8-node')
 
-const eventStreamMarshaller = new marshaller.EventStreamMarshaller(util_utf8_node.toUtf8, util_utf8_node.fromUtf8)
+const eventBuilder = new EventStreamMarshaller(toUtf8, fromUtf8)
 
 const config = {
   region: 'us-east-1',
@@ -26,18 +31,10 @@ const config = {
   accessKeySecret: String(AWS_ACCESS_KEY_SECRET),
 }
 
-const signature = new Signature()
-
-const URL = signature.createWebSocketURL({
-  region: config.region,
-  accessKeyId: config.accessKeyId,
-  secretAccessKey: config.accessKeySecret,
-})
-
 export default class AWSTranscribe extends EventsEmitter implements Transcriber {
-  description: string;
+  public description: string;
 
-  stream: any;
+  public duplex: PassThrough;
 
   protected history = '';
 
@@ -45,14 +42,42 @@ export default class AWSTranscribe extends EventsEmitter implements Transcriber 
 
   protected socket: WebSocket;
 
-  constructor(timeout: number, description = 'AWS Transcribe') {
+  protected showInterimResults: boolean;
+
+  constructor(timeout: number, description = 'AWS Transcribe', showInterimResults = false) {
     super()
 
     this.description = description
 
-    this.socket = new WebSocket(URL)
+    this.showInterimResults = showInterimResults
 
-    this.stream = WebSocket.createWebSocketStream(this.socket)
+    const signature = new Signature()
+
+    const sampleRate = 16000 // getSampleRate(format)
+
+    const signedURL = signature.createWebSocketURL({
+      region: config.region,
+      accessKeyId: config.accessKeyId,
+      secretAccessKey: config.accessKeySecret,
+      sampleRate,
+    })
+
+    this.socket = new WebSocket(signedURL)
+
+    // NOTE: Some codebases seem to be using arraybuffer,
+    // but I could not get it to work that way.
+    // /* this.socket.binaryType = 'arraybuffer' */
+
+    this.duplex = new PassThrough()
+    this.duplex._write = (chunk, enc, next) => {
+      // This could go in .capture()
+      chunk.swap16()
+
+      this.capture(chunk)
+      this.buffer.push(chunk)
+      // console.log(`=> Received ${this.buffer.length} chunks.`)
+      next()
+    }
 
     this.socket.addEventListener(EVENTS.MESSAGE, (message: any) => this.process(message))
 
@@ -60,6 +85,10 @@ export default class AWSTranscribe extends EventsEmitter implements Transcriber 
 
     this.socket.addEventListener(EVENTS.OPEN, () => {
       console.log('👂 Connected to AWS Transcribe')
+      console.log(`👂 AWS Transcribe is using binaryType  => ${this.socket.binaryType}`)
+      // console.log(`👂 AWS Transcribe is using codec       => ${format}`)
+      console.log(`👂 AWS Transcribe is using sample rate => ${sampleRate}`)
+      console.log(`👂 AWS Transcribe is using this url    => ${signedURL}`)
       this.emit(EVENTS.READY)
 
       if (timeout) {
@@ -72,20 +101,28 @@ export default class AWSTranscribe extends EventsEmitter implements Transcriber 
 
     this.socket.onclose = () => {
       this.showConversation()
-      console.log('👂 AWS transcribe connection closed.')
+      console.log('👂 AWS transcribe connection closed. Buffer size', this.buffer.length)
       this.emit(EVENTS.DONE)
     }
 
     process.on('SIGINT', () => {
-      if (this.isActive()) this.end()
-      else this.showConversation()
+      console.log('Captured SIGINT')
+      if (this.isActive()) {
+        this.end()
+        console.log('Called end()')
+      } else {
+        this.showConversation()
+      }
+
       this.emit(EVENTS.DONE)
+      console.log('Sent done event')
     })
   }
 
-  getAudioEventMessage(buffer: any) {
+  getAudioEventMessage(buffer: Uint8Array): Message {
     // wrap the audio data in a JSON envelope
     return {
+      body: buffer,
       headers: {
         ':message-type': {
           type: 'string',
@@ -94,26 +131,9 @@ export default class AWSTranscribe extends EventsEmitter implements Transcriber 
         ':event-type': {
           type: 'string',
           value: 'AudioEvent',
-        },
+        } as MessageHeaderValue,
       },
-      body: buffer,
     }
-  }
-
-  convertAudioToBinaryMessage(audioChunk: any) {
-    const raw = audioChunk
-
-    if (raw === null) return
-
-    // downSample and convert the raw audio bytes to PCM
-    const downSampledBuffer = downSampleBuffer(raw, 8000, 8000)
-    const pcmEncodedBuffer = pcmEncode(downSampledBuffer)
-
-    // add the right JSON headers and structure to the message
-    const audioEventMessage = this.getAudioEventMessage(Buffer.from(pcmEncodedBuffer))
-
-    // convert the JSON object + headers into a binary event stream message
-    return eventStreamMarshaller.marshall(audioEventMessage)
   }
 
   showConversation(): void {
@@ -129,44 +149,49 @@ export default class AWSTranscribe extends EventsEmitter implements Transcriber 
 
   end(): void {
     const emptyMessage = this.getAudioEventMessage(Buffer.from([]))
-    const emptyBuffer = eventStreamMarshaller.marshall(emptyMessage)
-    return this.socket.send(emptyBuffer)
+    const emptyBuffer = eventBuilder.marshall(emptyMessage)
+    this.socket.send(emptyBuffer)
   }
 
   close(): void {
+    this.emit(EVENTS.DONE)
     this.socket.close()
   }
 
   process(data: any) {
     const {fromCharCode} = String
-    const messageWrapper = eventStreamMarshaller.unmarshall(Buffer.from(data.data))
-    const messageBody = JSON.parse(fromCharCode.apply(String, messageWrapper.body))
+    const messageWrapper = eventBuilder.unmarshall(Buffer.from(data.data))
+    const messageBody = JSON.parse(fromCharCode.apply(String, messageWrapper.body as any))
 
     if (messageWrapper.headers[':message-type'].value === 'event') {
-      const results = messageBody.Transcript.Results
+      if (messageBody.Transcript.Results?.length) {
+        const result = messageBody.Transcript.Results[0]
+        const transcript = result.Alternatives[0]?.Transcript || ''
 
-      if (results.length > 0) {
-        console.log(results[0])
+        if (result && !result.IsPartial) {
+          this.history += `${formatTranscript(transcript)} `
+        }
+
+        if (this.showInterimResults) {
+          console.log('=>', transcript)
+        } else if (!result.IsPartial) {
+          console.log('=>', transcript)
+        }
       }
-
-      console.log(messageBody.Transcript)
     } else {
-      // onError(messageBody.Message)
       console.log('👂 AWS Transcribe encountered an error.', messageBody.Message)
     }
   }
 
-  capture(data: any, rawData: any): void {
-    // console.log(rawData)
-    // const binary = this.convertAudioToBinaryMessage(data)
-    // this.socket.send(binary)
-    // this.stream.write(binary)
-
-    const binary = this.convertAudioToBinaryMessage(data)
-    this.socket.send(binary)
-
-    // DOES NOT WORK
-    // const binary = eventStreamMarshaller.marshall(this.getAudioEventMessage(data))
-    // this.socket.send(binary)
+  capture(data: ArrayBuffer): void {
+    try {
+      // => convert the JSON object
+      const audioEventJSONMessage = this.getAudioEventMessage(Buffer.from(data))
+      // => headers into a binary event stream message
+      const binary = eventBuilder.marshall(audioEventJSONMessage)
+      this.socket.send(binary)
+    } catch (error) {
+      console.error(error)
+    }
   }
 }
