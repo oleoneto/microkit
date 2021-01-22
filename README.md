@@ -19,7 +19,7 @@ $ npm install -g @oleoneto/microkit
 $ microkit COMMAND
 running command...
 $ microkit (-v|--version|version)
-@oleoneto/microkit/0.2.5 darwin-x64 node-v12.20.0
+@oleoneto/microkit/0.2.5 darwin-x64 node-v12.20.1
 $ microkit --help [COMMAND]
 USAGE
   $ microkit COMMAND
@@ -236,11 +236,11 @@ USAGE
 OPTIONS
   --chunk-size=chunk-size      [default: 60000] RTMP server chunk size
   --gop-cache                  RTMP server cache
-  --http-port=http-port        [default: 9700] HTTP port
+  --http-port=http-port        [default: 9700] HTTP port [affects playback and admin dashboard]
   --ping=ping                  [default: 30] RTMP server ping
   --ping-timeout=ping-timeout  [default: 60] RTMP server ping-timeout in seconds
   --port=port                  [default: 1935] RTMP server port
-  --record                     capture/record RTMP stream into
+  --record                     capture/record RTMP stream into a file
   --recording-format=(mkv)     [default: mkv] recording format
   --source-encoding=(flv)      [default: flv] RTMP video source encoding
 
