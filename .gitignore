@@ -16,6 +16,9 @@ env/
 *.mp4
 *.mov
 *.wav
+*.mkv
 
+# Directories
 templates
-
+recordings
+logs
