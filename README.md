@@ -102,7 +102,7 @@ USAGE
 OPTIONS
   -a, --address=address                          (required) [default: http://127.0.0.1:8088] asterisk server address
   -e, --external-media-host=external-media-host  RTP listening server address (external host)
-  -f, --format=format                            [default: ulaw] audio format
+  -f, --format=(ulaw|slin16)                     [default: ulaw] audio format
   -m, --mode=mode                                [default: SIP] mode
   -p, --password=password                        (required) [default: asterisk] asterisk password
   -u, --username=username                        (required) [default: asterisk] asterisk user
@@ -112,11 +112,10 @@ OPTIONS
 EXAMPLES
   $ microkit utils:call 6001
   $ microkit utils:call 6001 --mode SIP
-  $ microkit utils:call 6001 -e localhost:5554
-  $ microkit utils:call 6001 --docker --engine=deepgram
-  $ microkit utils:call 6001 -a http://127.0.0.1:8088 -u asterisk --docker
-  $ microkit utils:call 6001 -e http://127.0.0.1:1234 --docker
-  $ microkit utils:call 6001 -e http://127.0.0.1:1234 --docker --format=ulaw
+  $ microkit utils:call 6001 --mode=SIP --address=http://127.0.0.1:8088 --username=asterisk
+  $ microkit utils:call 6001 --enable-external_media --docker
+  $ microkit utils:call 6001 --enable-external-media --external-media-host=http://localhost:5554
+  $ microkit utils:call 6001 --enable-external-media --external-media-host=http://localhost:5554 -f=slin16
 ```
 
 _See code: [src/commands/utils/call/index.ts](https://github.com/oleoneto/microkit/blob/v0.2.5/src/commands/utils/call/index.ts)_
