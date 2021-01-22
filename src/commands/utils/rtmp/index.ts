@@ -24,11 +24,11 @@ export default class UtilsRtmpIndex extends Command {
     // 'auth-publish': flags.boolean({description: 'publish RTMP stream [beta]', default: true}),
     'chunk-size': flags.integer({description: 'RTMP server chunk size', default: 60000}),
     'gop-cache': flags.boolean({description: 'RTMP server cache', default: true}),
-    'http-port': flags.integer({description: 'HTTP port', default: 9700}),
+    'http-port': flags.integer({description: 'HTTP port [affects playback and admin dashboard]', default: 9700}),
     ping: flags.integer({description: 'RTMP server ping', default: 30}),
     'ping-timeout': flags.integer({description: 'RTMP server ping-timeout in seconds', default: 60}),
     port: flags.integer({description: 'RTMP server port', default: 1935}),
-    record: flags.boolean({description: 'capture/record RTMP stream into', default: false}),
+    record: flags.boolean({description: 'capture/record RTMP stream into a file', default: false}),
     'recording-format': flags.enum({description: 'recording format', options: ['mkv'], default: 'mkv'}),
     'source-encoding': flags.enum({description: 'RTMP video source encoding', options: ['flv'], default: 'flv'}),
   }
@@ -70,8 +70,8 @@ export default class UtilsRtmpIndex extends Command {
     })
 
     // MARK: - Authentication and preconnect check for publishers
-    // NOTE: http://[host]/COMBO_INTERACTION + QUEUE_ID/CLIENT_ID/SECRET_KEY
-    // NOTE: http://[host]/COMBO_INTERACTION + QUEUE_ID/u1N51PCR1T/9h2Q=r;6UJ}xGs)
+    // NOTE: http://[host]/CLIENT_ID/SECRET_KEY
+    // NOTE: http://[host]/u1N51PCR1T/9h2Q=r;6UJ}xGs)
     server.on('preConnect', (id: string, args: {app: string; type: string; tcUrl: string}) => {
 
       const session = server.getSession(id)
@@ -85,22 +85,21 @@ export default class UtilsRtmpIndex extends Command {
 
         urlComponents = urlComponents.filter((e: string) => e !== '')
 
-        if (urlComponents.length !== 3) this.error('Not a valid URL')
+        if (urlComponents.length !== 2) this.error('Not a valid URL')
 
-        const comboKeyIds = urlComponents[0]
-        const clientId = urlComponents[1]
-        const secretKey = urlComponents[2]
+        const clientId = urlComponents[0]
+        const secretKey = urlComponents[1]
 
-        this.log(`You are ${comboKeyIds}. Using CLIENT_ID: ${clientId} SECRET_KEY: ${secretKey}`)
+        this.log(`Using CLIENT_ID: ${clientId} SECRET_KEY: ${secretKey}`)
 
-        post('http://localhost:3018/v1/auth', '', undefined, {comboKeyIds, clientId, secretKey})
-        .then((data: any) => {
-          if (!data.accept) session.reject()
-        })
-        .catch((error: string | Error) => {
-          session.reject()
-          this.error(error)
-        })
+        // post('http://localhost:3018/v1/auth', '', undefined, {clientId, secretKey})
+        // .then((data: any) => {
+        //   if (!data.accept) session.reject()
+        // })
+        // .catch((error: string | Error) => {
+        //   session.reject()
+        //   this.error(error)
+        // })
       } catch (error) {
         session.reject()
       }
@@ -111,7 +110,6 @@ export default class UtilsRtmpIndex extends Command {
       // Pre play authorization
       // let session = nms.getSession(id);
       // session.reject();
-      // this.log('NO VIEWING FOR YOU. JK')
       this.log(args.query)
     })
 
