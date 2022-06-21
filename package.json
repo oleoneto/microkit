@@ -28,7 +28,7 @@
     "@types/ws": "~7.2.6",
     "ari-client": "~2.2.0",
     "audio-buffer-stream": "~1.1.0",
-    "aws-sdk": "~2.757.0",
+    "aws-sdk": "~2.1145.0",
     "axios": "~0.20.0",
     "bitbucket": "~2.4.1",
     "cli-ux": "~5.5.0",
