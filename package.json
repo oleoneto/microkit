@@ -37,7 +37,7 @@
     "gitignore": "~0.6.0",
     "inquirer": "~7.3.3",
     "kafka-node": "~5.0.0",
-    "knex": "~0.21.5",
+    "knex": "~2.4.0",
     "license": "~1.0.3",
     "listr": "~0.14.3",
     "moment": "~2.29.4",
