@@ -1,5 +1,5 @@
 <!--
-Thanks for contributing to medjat-setup-api!
+Thanks for contributing to microkit!
 
 About this template
 
