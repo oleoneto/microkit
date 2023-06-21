@@ -45,7 +45,7 @@
     "node-media-server": "~2.2.4",
     "node-record-lpcm16": "~1.0.1",
     "node-rtsp-recorder": "^1.0.3",
-    "pg": "~8.3.3",
+    "pg": "~8.4.0",
     "pkg-install": "~1.0.0",
     "query-string": "^6.13.6",
     "simple-git": "~3.5.0",
