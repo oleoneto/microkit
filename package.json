@@ -29,7 +29,7 @@
     "ari-client": "~2.2.0",
     "audio-buffer-stream": "~1.1.0",
     "aws-sdk": "~2.814.0",
-    "axios": "~0.21.3",
+    "axios": "~1.6.4",
     "bitbucket": "~2.4.1",
     "cli-ux": "~5.5.0",
     "dotenv": "~8.2.0",
