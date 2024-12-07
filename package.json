@@ -42,7 +42,7 @@
     "listr": "~0.14.3",
     "moment": "~2.29.4",
     "ncp": "~2.0.0",
-    "node-media-server": "~2.2.4",
+    "node-media-server": "~4.0.7",
     "node-record-lpcm16": "~1.0.1",
     "node-rtsp-recorder": "^1.0.3",
     "pg": "~8.3.3",
