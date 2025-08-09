@@ -35,7 +35,7 @@
     "dotenv": "~8.2.0",
     "fluent-ffmpeg": "~2.1.2",
     "gitignore": "~0.6.0",
-    "inquirer": "~7.3.3",
+    "inquirer": "~8.2.7",
     "kafka-node": "~5.0.0",
     "knex": "~0.21.5",
     "license": "~1.0.3",
