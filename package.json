@@ -31,7 +31,7 @@
     "aws-sdk": "~2.814.0",
     "axios": "~0.21.3",
     "bitbucket": "~2.4.1",
-    "cli-ux": "~5.5.0",
+    "cli-ux": "~6.0.9",
     "dotenv": "~8.2.0",
     "fluent-ffmpeg": "~2.1.2",
     "gitignore": "~0.6.0",
